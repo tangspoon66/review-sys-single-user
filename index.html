@@ -16,18 +16,30 @@
         <img class="brand-logo" src="./assets/logo-white.png" alt="深圳科学技术馆推介官" decoding="async" />
       </header>
 
-      <section class="copy-panel" aria-label="笔记文案">
-        <div class="panel-head"><span>笔记文案</span></div>
-        <textarea id="copyText" readonly aria-label="小红书笔记文案"></textarea>
-        <button id="copyButton" class="copy-float" type="button">一键复制文案</button>
+      <section class="section-panel" id="sectionPanel" aria-label="选择板块">
+        <div class="panel-head"><span>选择板块</span></div>
+        <div id="sectionList" class="section-list"></div>
+        <p id="sectionHint" class="section-hint">请选择一个板块。选中后会弹出文案，复制成功才会标记已用。</p>
       </section>
 
-      <section class="preview" aria-label="本次图片">
-        <img id="postImage" alt="小红书发布图片" decoding="async" />
-        <div class="preview-overlay">长按保存图片</div>
-      </section>
+      <p id="exhausted" class="exhausted" hidden>次数已用完</p>
+      <p id="status" class="status" role="status">正在读取板块...</p>
 
-      <p id="status" class="status" role="status"></p>
+      <div id="copyModal" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <div class="modal-head">
+            <h2 id="modalTitle">文案</h2>
+            <button id="modalClose" class="modal-close" type="button">关闭</button>
+          </div>
+          <p class="modal-note">请在弹窗内复制。复制成功后这条文案才会标记为已用；关闭弹窗不会消耗。</p>
+          <textarea id="modalText" readonly aria-label="分享文案"></textarea>
+          <button id="modalCopy" class="copy-float modal-copy" type="button">复制文案</button>
+          <section class="preview modal-preview" id="modalPreview" hidden>
+            <img id="postImage" alt="发布图片" decoding="async" />
+            <div class="preview-overlay">长按保存图片</div>
+          </section>
+        </div>
+      </div>
 
       <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
     </main>

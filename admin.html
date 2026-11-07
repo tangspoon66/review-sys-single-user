@@ -24,7 +24,7 @@
       .topbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
       h1 { margin: 0; font-size: 24px; line-height: 1.2; }
       .muted { color: #98adc8; font-size: 13px; line-height: 1.5; }
-      .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
       .stat, .card {
         border: 1px solid rgba(200,230,255,.14);
         border-radius: 14px;
@@ -38,7 +38,7 @@
       .card-title { display:flex; align-items:center; justify-content:space-between; gap: 12px; margin-bottom: 12px; }
       .card h2 { margin: 0; font-size: 16px; }
       .form-grid { display: grid; gap: 10px; }
-      textarea, input[type=file], select {
+      textarea, input[type=file], input[type=text], input[type=number], select {
         width: 100%;
         border: 1px solid rgba(200,230,255,.16);
         border-radius: 12px;
@@ -156,9 +156,30 @@
       .thumb { width: 68px; height: 68px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,.08); flex: 0 0 auto; }
       .message { min-height: 22px; margin: 12px 2px 0; color: #b9d8ff; font-weight: 700; }
       .message.error { color: #ffb4c3; }
+      .section-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) 110px auto auto auto;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .check-line { display: flex; align-items: center; gap: 8px; color: #d5e6ff; font-size: 14px; font-weight: 700; white-space: nowrap; }
+      .form-note { margin: 0 0 10px; }
+      .banner {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(255,83,112,.14);
+        color: #ffb4c3;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+      .banner[hidden] { display: none !important; }
+      .item.section-row { grid-template-columns: minmax(0, 1fr); cursor: pointer; }
+      .item.selected { outline: 2px solid rgba(70,166,255,.85); }
       .inline-btn { min-height: 38px; padding: 0 12px; border-radius: 10px; font-size: 13px; }
       @media (max-width: 920px) {
-        .workspace, .lists, .stats { grid-template-columns: 1fr; }
+        .workspace, .lists, .section-form { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -167,19 +188,39 @@
       <div class="topbar">
         <div>
           <h1>深圳科学技术馆推介官后台</h1>
-          <div class="muted">管理文案、图片和扫码分发策略。文案使用后即消耗，不会重复发放。</div>
+          <div class="muted">先管理板块，再按板块导入文案。观众选中板块后在弹窗里复制，复制成功才标记已用。图片不按板块拆分。</div>
         </div>
         <button id="logoutBtn" class="logout-btn" type="button">退出登录</button>
       </div>
 
       <section class="stats" id="stats"></section>
 
+      <section class="card" id="sectionCard" style="margin-bottom:14px;">
+        <div class="card-title">
+          <div>
+            <h2>板块</h2>
+            <div class="muted">观众首页按排序显示已启用板块，一次只能选一个。每个板块有独立文案库。图片仍使用全站策略。</div>
+          </div>
+        </div>
+        <div id="campaignWarning" class="banner" hidden></div>
+        <form id="sectionForm" class="section-form">
+          <input id="sectionName" type="text" maxlength="40" placeholder="板块名称，例如：常设展览" required />
+          <input id="sectionSort" type="number" step="1" value="0" aria-label="排序，数字越小越靠前" />
+          <label class="check-line"><input id="sectionEnabled" type="checkbox" checked /> 启用</label>
+          <button id="sectionSubmit" type="submit">添加板块</button>
+          <button id="sectionCancel" class="secondary hidden" type="button">取消编辑</button>
+        </form>
+        <div class="muted form-note">排序数字越小越靠前。只要有一个启用板块没有未使用文案，观众端就会整站显示「次数已用完」，不会提示改选其他板块。</div>
+        <div class="list" id="sectionAdminList"></div>
+      </section>
+
       <section class="workspace">
         <div class="card">
           <div class="card-title">
             <div>
               <h2>导入文案</h2>
-              <div class="muted">先批量导入文件，再手工补充零散文案。重复项会自动跳过。</div>
+              <div class="muted" id="importTarget">请先添加并选择板块。</div>
+              <div class="muted">支持 UTF-8 TXT、MD、DOCX。文案只进入当前板块，重复项会自动跳过。</div>
             </div>
           </div>
           <div class="split-tabs">
@@ -251,7 +292,7 @@
 
       <section class="lists">
         <div class="card">
-          <div class="card-title"><h2>文案库</h2><span class="muted" id="textListHint">展示最近 80 条</span></div>
+          <div class="card-title"><h2>文案库</h2><span class="muted" id="textListHint">请先选择板块</span></div>
           <div class="list-toolbar">
             <button id="selectAllTexts" class="secondary" type="button">全选当前页</button>
             <button id="clearTexts" class="secondary" type="button">取消选择</button>
@@ -298,7 +339,16 @@
       const imageListHint = $("#imageListHint");
       const LIST_LIMIT = 80;
       let latestSettings = { imageMode: "random", fixedImageId: "" };
-      let latestData = { texts: [], images: [] };
+      let latestData = { texts: [], images: [], sections: [] };
+      let sections = [];
+      let selectedSectionId = "";
+      let editingSectionId = "";
+
+      try {
+        selectedSectionId = sessionStorage.getItem("adminSectionId") || "";
+      } catch (error) {
+        selectedSectionId = "";
+      }
 
       function escapeHTML(value) {
         return String(value).replace(/[&<>"']/g, (char) => ({
@@ -317,6 +367,66 @@
 
       function statCard(title, value) {
         return `<div class="stat"><b>${value}</b><span>${title}</span></div>`;
+      }
+
+      function persistSection(id) {
+        selectedSectionId = id || "";
+        try {
+          sessionStorage.setItem("adminSectionId", selectedSectionId);
+        } catch (error) {
+          selectedSectionId = id || "";
+        }
+      }
+
+      function currentSection() {
+        return sections.find((section) => section.id === selectedSectionId) || null;
+      }
+
+      function resetSectionForm() {
+        editingSectionId = "";
+        $("#sectionForm").reset();
+        $("#sectionEnabled").checked = true;
+        $("#sectionSort").value = "0";
+        $("#sectionSubmit").textContent = "添加板块";
+        $("#sectionCancel").classList.add("hidden");
+      }
+
+      function renderSections() {
+        const warning = $("#campaignWarning");
+        const blocking = sections.filter((section) => section.enabled && section.textUnused === 0);
+        if (blocking.length) {
+          warning.hidden = false;
+          warning.textContent = `以下启用板块没有未使用文案，观众端会整站显示「次数已用完」，其他板块也不会发放：${blocking.map((section) => section.name).join("、")}。请补充文案或先停用。`;
+        } else {
+          warning.hidden = true;
+          warning.textContent = "";
+        }
+
+        $("#sectionAdminList").innerHTML = sections.map((section) => `
+          <div class="item section-row ${section.id === selectedSectionId ? "selected" : ""}" data-section-row="${section.id}">
+            <div class="item-body">
+              <div class="item-copy"><strong>${escapeHTML(section.name)}</strong></div>
+              <span class="tag">${section.enabled ? "启用" : "停用"} · 排序 ${section.sortOrder} · 未使用 ${section.textUnused} / ${section.textTotal}</span>
+              <div class="item-actions">
+                <button class="secondary" type="button" data-edit-section="${section.id}">编辑</button>
+                <button class="secondary" type="button" data-toggle-section="${section.id}">${section.enabled ? "停用" : "启用"}</button>
+                <button class="danger" type="button" data-delete-section="${section.id}">删除</button>
+              </div>
+            </div>
+          </div>
+        `).join("") || '<div class="muted">暂无板块。先添加板块，再导入该板块的文案。</div>';
+
+        const current = currentSection();
+        $("#importTarget").textContent = current ? `当前导入到：${current.name}` : "请先添加并选择板块。";
+      }
+
+      function reconcileSection(data) {
+        sections = data.sections || [];
+        if (!sections.some((section) => section.id === selectedSectionId)) {
+          persistSection(sections[0]?.id || "");
+          return true;
+        }
+        return false;
       }
 
       function modeLabel(mode) {
@@ -362,6 +472,17 @@
         return data;
       }
 
+      async function deleteJSON(url) {
+        const response = await fetch(url, { method: "DELETE" });
+        if (response.status === 401) {
+          location.replace("/login.html");
+          throw new Error("请先登录后台");
+        }
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.message || "操作失败");
+        return data;
+      }
+
       function renderImageUploadControls(mode) {
         const fixedMode = mode === "fixed";
         randomUploadActions.classList.toggle("hidden", fixedMode);
@@ -382,6 +503,7 @@
 
       function renderStats(data) {
         statsEl.innerHTML = [
+          statCard("板块", data.counts.sectionTotal ?? 0),
           statCard("文案总数", data.counts.textTotal),
           statCard("未使用文案", data.counts.textUnused),
           statCard("图片总数", data.counts.imageTotal),
@@ -402,24 +524,35 @@
         });
       }
 
-      async function refresh(options = {}) {
+      async function refresh(options = {}, attempt = 0) {
         const renderLists = options.renderLists !== false;
-        const response = await fetch(`/api/admin/state?limit=${LIST_LIMIT}`);
+        const params = new URLSearchParams({ limit: String(LIST_LIMIT) });
+        if (selectedSectionId) params.set("sectionId", selectedSectionId);
+        const response = await fetch(`/api/admin/state?${params}`);
         if (response.status === 401) {
           location.replace("/login.html");
           return;
         }
         const data = await response.json();
+        reconcileSection(data);
+        if (attempt < 1 && selectedSectionId && data.sectionId !== selectedSectionId) {
+          return refresh(options, attempt + 1);
+        }
+
         latestSettings = data.settings;
         latestData = data;
 
         renderStats(data);
         renderMode(data);
+        renderSections();
         if (!renderLists) {
           return;
         }
 
-        textListHint.textContent = `展示最近 ${data.limit || LIST_LIMIT} 条`;
+        const current = currentSection();
+        textListHint.textContent = current
+          ? `当前板块：${current.name} · 展示最近 ${data.limit || LIST_LIMIT} 条`
+          : "请先添加并选择板块";
         imageListHint.textContent = `展示最近 ${data.limit || LIST_LIMIT} 张`;
 
         textList.innerHTML = data.texts.map((item) => `
@@ -443,7 +576,7 @@
               </div>
             </div>
           </div>
-        `).join("") || '<div class="muted">暂无文案</div>';
+        `).join("") || `<div class="muted">${currentSection() ? "这个板块还没有文案" : "请先添加并选择板块"}</div>`;
 
         imageList.innerHTML = data.images.map((item) => `
           <div class="item">
@@ -500,8 +633,10 @@
       }
 
       async function uploadTexts() {
+        if (!selectedSectionId) return showMessage("请先添加并选择板块", "error");
         if (!textFileInput.files.length) return;
         const form = new FormData();
+        form.append("sectionId", selectedSectionId);
         for (const file of textFileInput.files) form.append("files", file);
 
         showMessage("正在导入文案，请稍等...");
@@ -517,8 +652,10 @@
       async function uploadPastedTexts() {
         const form = new FormData();
         const text = $("#textInput").value.trim();
+        if (!selectedSectionId) return showMessage("请先添加并选择板块", "error");
         if (text) form.append("text", text);
         if (!text) return showMessage("请先输入要导入的文案");
+        form.append("sectionId", selectedSectionId);
         showMessage("正在导入文案，请稍等...");
         const response = await fetch("/api/admin/upload-texts", { method: "POST", body: form });
         const data = await response.json();
@@ -765,6 +902,7 @@
       }
 
       $("#pickTextFileBtn").addEventListener("click", () => {
+        if (!selectedSectionId) return showMessage("请先添加并选择板块", "error");
         textFileInput.click();
       });
       textFileInput.addEventListener("change", async () => {
@@ -930,6 +1068,79 @@
 
       tabFile.addEventListener("click", () => setTab("file"));
       tabPaste.addEventListener("click", () => setTab("paste"));
+
+      $("#sectionForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const wasEditing = Boolean(editingSectionId);
+        try {
+          const payload = {
+            name: $("#sectionName").value,
+            sortOrder: $("#sectionSort").value,
+            enabled: $("#sectionEnabled").checked,
+          };
+          if (wasEditing) {
+            await patchJSON(`/api/admin/sections/${editingSectionId}`, payload);
+          } else {
+            const created = await postJSON("/api/admin/sections", payload);
+            persistSection(created.section?.id || selectedSectionId);
+          }
+          resetSectionForm();
+          await refresh();
+          showMessage(wasEditing ? "板块已保存" : "板块已添加");
+        } catch (error) {
+          showMessage(error.message, "error");
+        }
+      });
+
+      $("#sectionCancel").addEventListener("click", () => resetSectionForm());
+
+      $("#sectionAdminList").addEventListener("click", async (event) => {
+        const button = event.target.closest("button");
+        const row = event.target.closest("[data-section-row]");
+        if (!row) return;
+
+        try {
+          if (!button) {
+            persistSection(row.dataset.sectionRow);
+            await refresh();
+            return;
+          }
+
+          const sectionId = button.dataset.editSection || button.dataset.toggleSection || button.dataset.deleteSection;
+          const section = sections.find((item) => item.id === sectionId);
+          if (!section) return;
+
+          if (button.dataset.editSection) {
+            editingSectionId = section.id;
+            $("#sectionName").value = section.name;
+            $("#sectionSort").value = String(section.sortOrder);
+            $("#sectionEnabled").checked = section.enabled;
+            $("#sectionSubmit").textContent = "保存修改";
+            $("#sectionCancel").classList.remove("hidden");
+            persistSection(section.id);
+            renderSections();
+            return;
+          }
+
+          if (button.dataset.toggleSection) {
+            await patchJSON(`/api/admin/sections/${section.id}`, { enabled: !section.enabled });
+            await refresh();
+            showMessage(section.enabled ? "板块已停用" : "板块已启用");
+            return;
+          }
+
+          if (button.dataset.deleteSection) {
+            if (!confirm(`确定删除板块「${section.name}」及其全部文案吗？图片不会删除。`)) return;
+            await deleteJSON(`/api/admin/sections/${section.id}`);
+            if (selectedSectionId === section.id) persistSection("");
+            if (editingSectionId === section.id) resetSectionForm();
+            await refresh();
+            showMessage("板块已删除");
+          }
+        } catch (error) {
+          showMessage(error.message, "error");
+        }
+      });
 
       refresh();
     </script>
