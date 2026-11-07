@@ -164,20 +164,27 @@ textarea {
 }
 
 .section-list {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 12px 12px 4px;
 }
 
 .section-btn {
-  width: 100%;
+  flex: 1 1 calc(50% - 10px);
+  width: auto;
+  max-width: 100%;
+  min-width: min(100%, max-content);
   min-height: 54px;
+  padding: 10px 16px;
   border: 1px solid rgba(200, 230, 255, 0.18);
   border-radius: 12px;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.06);
   font-size: 16px;
-  font-weight: 850;
+  font-weight: 800;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .section-btn[aria-pressed="true"],
@@ -211,82 +218,21 @@ textarea {
   text-align: center;
 }
 
-.modal[hidden],
-.exhausted[hidden],
-.section-panel[hidden],
-.section-hint[hidden],
-.modal-preview[hidden] {
-  display: none !important;
+.copy-panel {
+  margin-top: 14px;
 }
 
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgba(4, 10, 19, 0.72);
-}
-
-.modal-card {
-  width: min(100%, 480px);
-  max-height: min(92vh, 820px);
-  overflow: auto;
-  border: 1px solid rgba(200, 230, 255, 0.16);
-  border-radius: 16px;
-  background: rgba(9, 18, 33, 0.96);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
-}
-
-.modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 14px 0;
-}
-
-.modal-head h2 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.modal-close {
-  min-height: 36px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 10px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-  font-weight: 800;
-}
-
-.modal-note {
-  margin: 10px 14px 0;
-  color: #b9d8ff;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.modal-card textarea {
-  min-height: 140px;
+#copyText {
   user-select: text;
   -webkit-user-select: text;
 }
 
-.modal-copy {
-  width: calc(100% - 28px);
-  margin: 0 14px 14px;
-}
-
-.modal-preview {
-  margin: 0 14px 14px;
-}
-
-body.modal-open {
-  overflow: hidden;
+.copy-panel[hidden],
+.preview[hidden],
+.exhausted[hidden],
+.section-panel[hidden],
+.section-hint[hidden] {
+  display: none !important;
 }
 
 .preview {

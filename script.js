@@ -2,18 +2,17 @@ function init() {
   const sectionPanel = document.querySelector("#sectionPanel");
   const sectionList = document.querySelector("#sectionList");
   const sectionHint = document.querySelector("#sectionHint");
+  const copyPanel = document.querySelector("#copyPanel");
+  const copyHeading = document.querySelector("#copyHeading");
+  const copyText = document.querySelector("#copyText");
+  const copyButton = document.querySelector("#copyButton");
+  const imagePreview = document.querySelector("#imagePreview");
+  const postImage = document.querySelector("#postImage");
   const exhausted = document.querySelector("#exhausted");
   const statusText = document.querySelector("#status");
-  const modal = document.querySelector("#copyModal");
-  const modalTitle = document.querySelector("#modalTitle");
-  const modalText = document.querySelector("#modalText");
-  const modalCopy = document.querySelector("#modalCopy");
-  const modalClose = document.querySelector("#modalClose");
-  const modalPreview = document.querySelector("#modalPreview");
-  const postImage = document.querySelector("#postImage");
   const toast = document.querySelector("#toast");
 
-  if (!sectionPanel || !sectionList || !exhausted || !statusText || !modal || !modalText || !modalCopy || !toast) {
+  if (!sectionPanel || !sectionList || !copyPanel || !copyText || !copyButton || !exhausted || !statusText || !toast) {
     console.error("Missing required UI elements.");
     return;
   }
@@ -25,6 +24,7 @@ function init() {
   let copyCommitted = false;
   let commitStarted = false;
   let selectedButton = null;
+  let selectedSectionId = "";
 
   function setStatus(message) {
     statusText.textContent = message;
@@ -58,6 +58,7 @@ function init() {
       button.setAttribute("aria-pressed", "false");
     });
     selectedButton = null;
+    selectedSectionId = "";
   }
 
   async function releaseActive(keepalive = false) {
@@ -76,14 +77,23 @@ function init() {
     }
   }
 
-  function showExhausted(message) {
+  function hideCopy() {
+    copyPanel.hidden = true;
+    copyText.value = "";
+    copyHeading.textContent = "笔记文案";
+    imagePreview.hidden = true;
+    postImage.removeAttribute("src");
+  }
+
+  function showExhausted(message, keepCopy = false) {
     const text = message || "次数已用完";
     sectionPanel.hidden = true;
     sectionHint.hidden = true;
     exhausted.hidden = false;
     exhausted.textContent = text;
+    if (!keepCopy) hideCopy();
     setStatus(text);
-    clearPressed();
+    if (!keepCopy) clearPressed();
   }
 
   function showPicker() {
@@ -101,57 +111,59 @@ function init() {
       button.className = "section-btn";
       button.textContent = section.name;
       button.dataset.sectionId = section.id;
-      button.setAttribute("aria-pressed", "false");
+      button.setAttribute("aria-pressed", section.id === selectedSectionId ? "true" : "false");
       button.addEventListener("click", () => {
         chooseSection(section, button);
       });
       sectionList.appendChild(button);
     });
-    setStatus("请选择一个板块");
+    selectedButton = selectedSectionId
+      ? sectionList.querySelector(`[data-section-id="${selectedSectionId}"]`)
+      : null;
   }
 
-  async function loadSections() {
+  async function loadSections(options = {}) {
     const response = await fetch("/api/sections");
     const data = await response.json();
     if (!data.ok || !Array.isArray(data.sections) || !data.sections.length) {
-      showExhausted(data.message || "次数已用完");
+      showExhausted(data.message || "次数已用完", options.keepCopy);
       return false;
     }
     renderSections(data.sections);
+    if (!copyPanel.hidden) {
+      setStatus(copyCommitted
+        ? "文案已复制，可以直接粘贴到小红书。"
+        : "文案已就绪，请点击按钮复制。复制成功后才会标记已用。");
+    } else {
+      setStatus("请选择一个板块");
+    }
     return true;
   }
 
-  function hideModal() {
-    modal.hidden = true;
-    document.body.classList.remove("modal-open");
-    modalText.value = "";
-    modalPreview.hidden = true;
-    postImage.removeAttribute("src");
-    clearPressed();
-  }
-
-  function openModal(section, data) {
+  function showCopy(section, data) {
     rememberReservation(data);
-    modalTitle.textContent = section.name || data.sectionName || "文案";
-    modalText.value = data.text || "";
+    copyHeading.textContent = section.name || data.sectionName || "笔记文案";
+    copyText.value = data.text || "";
+    copyPanel.hidden = false;
     if (data.image) {
-      modalPreview.hidden = false;
+      imagePreview.hidden = false;
       postImage.src = data.image;
     } else {
-      modalPreview.hidden = true;
+      imagePreview.hidden = true;
       postImage.removeAttribute("src");
     }
-    modal.hidden = false;
-    document.body.classList.add("modal-open");
-    setStatus("请在弹窗中复制文案。");
-    modalCopy.focus();
+    sectionHint.textContent = "文案在下方。复制成功后才会标记已用，换板块不会消耗当前这条。";
+    setStatus("文案已就绪，请点击按钮复制。复制成功后才会标记已用。");
+    copyPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   async function chooseSection(section, button) {
     if (busy || !section?.id) return;
+    if (selectedSectionId === section.id && activeReservation && !copyCommitted) return;
     busy = true;
     setButtonsDisabled(true);
     clearPressed();
+    selectedSectionId = section.id;
     button.setAttribute("aria-pressed", "true");
     selectedButton = button;
     setStatus("正在获取文案...");
@@ -162,28 +174,33 @@ function init() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          previousTextId: previous?.textId || "",
-          previousReservationToken: previous?.reservationToken || "",
+          previousTextId: previous && !copyCommitted ? previous.textId : "",
+          previousReservationToken: previous && !copyCommitted ? previous.reservationToken : "",
         }),
       });
       const data = await response.json();
-      if (previous) activeReservation = null;
+      if (previous && !copyCommitted) activeReservation = null;
 
       if (!data.ok) {
+        hideCopy();
         if (data.message === "次数已用完") {
-          hideModal();
           showExhausted(data.message);
           return;
         }
         setStatus(data.message || "获取失败，请重试");
         button.setAttribute("aria-pressed", "false");
+        selectedButton = null;
+        selectedSectionId = "";
         return;
       }
 
-      openModal(section, data);
+      showCopy(section, data);
     } catch (error) {
+      hideCopy();
       setStatus("素材加载失败，请稍后重试。");
       button.setAttribute("aria-pressed", "false");
+      selectedButton = null;
+      selectedSectionId = "";
       console.error(error);
     } finally {
       busy = false;
@@ -204,8 +221,8 @@ function init() {
     }
 
     try {
-      modalText.focus();
-      modalText.select();
+      copyText.focus();
+      copyText.select();
       return document.execCommand("copy");
     } catch (error) {
       console.error(error);
@@ -230,7 +247,7 @@ function init() {
         if (String(data.message || "").includes("失效")) {
           activeReservation = null;
           localCopied = false;
-          hideModal();
+          hideCopy();
           showToast(data.message);
           await loadSections();
           setStatus(data.message);
@@ -245,6 +262,8 @@ function init() {
       activeReservation = null;
       setStatus("文案已复制，可以直接粘贴到小红书。");
       showToast("复制成功");
+      const stillOpen = await loadSections({ keepCopy: true });
+      setStatus(stillOpen ? "文案已复制，可以直接粘贴到小红书。" : "文案已复制。次数已用完。");
       return true;
     } catch (error) {
       commitStarted = false;
@@ -255,13 +274,14 @@ function init() {
     }
   }
 
-  async function copyFromModal() {
+  async function copyFromPanel() {
     if (copyCommitted) {
       showToast("已经复制");
       return;
     }
+    if (!copyText.value) return;
     if (!localCopied) {
-      const copied = await writeClipboard(modalText.value);
+      const copied = await writeClipboard(copyText.value);
       if (!copied) {
         setStatus("自动复制失败，请在文案框中长按或选择后复制。");
         showToast("复制失败，请手动复制");
@@ -272,39 +292,14 @@ function init() {
     await commitCopy();
   }
 
-  async function closeModal() {
-    if (localCopied && !copyCommitted) await commitCopy();
-    const copied = copyCommitted;
-    if (!copyCommitted) await releaseActive();
-    hideModal();
-    if (copied) {
-      const stillOpen = await loadSections();
-      setStatus(stillOpen ? "文案已复制，可以直接粘贴到小红书。" : "文案已复制。次数已用完。");
-      return;
-    }
-    if (!exhausted.hidden) return;
-    setStatus("请选择一个板块");
-  }
-
-  modalCopy.addEventListener("click", () => {
-    copyFromModal();
+  copyButton.addEventListener("click", () => {
+    copyFromPanel();
   });
 
-  modalText.addEventListener("copy", () => {
+  copyText.addEventListener("copy", () => {
+    if (!copyText.value) return;
     localCopied = true;
     commitCopy();
-  });
-
-  modalClose.addEventListener("click", () => {
-    closeModal();
-  });
-
-  modal.addEventListener("click", (event) => {
-    if (event.target === modal) closeModal();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modal.hidden) closeModal();
   });
 
   window.addEventListener("pagehide", () => {
@@ -335,6 +330,7 @@ function init() {
   loadBackgroundWhenIdle();
   loadSections().catch((error) => {
     sectionPanel.hidden = true;
+    hideCopy();
     setStatus("素材加载失败，请稍后重试。");
     console.error(error);
   });
