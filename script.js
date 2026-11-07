@@ -7,10 +7,9 @@ function init() {
   const imagePreview = document.querySelector("#imagePreview");
   const postImage = document.querySelector("#postImage");
   const notice = document.querySelector("#notice");
-  const statusText = document.querySelector("#status");
   const toast = document.querySelector("#toast");
 
-  if (!gatePanel || !copyPanel || !copyText || !copyButton || !notice || !statusText || !toast) {
+  if (!gatePanel || !copyPanel || !copyText || !copyButton || !notice || !toast) {
     console.error("Missing required UI elements.");
     return;
   }
@@ -21,10 +20,6 @@ function init() {
   let localCopied = false;
   let copyCommitted = false;
   let commitStarted = false;
-
-  function setStatus(message) {
-    statusText.textContent = message;
-  }
 
   function showToast(message) {
     toast.textContent = message;
@@ -44,7 +39,6 @@ function init() {
     hideCopy();
     notice.hidden = true;
     gatePanel.hidden = false;
-    setStatus("");
   }
 
   function showProblem(message) {
@@ -52,7 +46,6 @@ function init() {
     gatePanel.hidden = true;
     notice.hidden = false;
     notice.textContent = message || "这个入口无效";
-    setStatus(message || "这个入口无效");
     activeReservation = null;
   }
 
@@ -73,7 +66,6 @@ function init() {
       imagePreview.hidden = true;
       postImage.removeAttribute("src");
     }
-    setStatus("文案已就绪。复制成功后才会标记已用。");
   }
 
   async function releaseActive(keepalive = false) {
@@ -102,7 +94,6 @@ function init() {
       return;
     }
 
-    setStatus("正在读取文案...");
     const response = await fetch(`/api/sections/${encodeURIComponent(sectionId)}/preview`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -156,18 +147,15 @@ function init() {
           showToast(data.message);
           return false;
         }
-        setStatus(data.message || "复制已完成，但标记失败，请再点一次复制。");
         showToast("标记失败，请重试");
         return false;
       }
       copyCommitted = true;
       activeReservation = null;
-      setStatus("文案已复制，可以直接粘贴到小红书。");
       showToast("复制成功");
       return true;
     } catch (error) {
       commitStarted = false;
-      setStatus("复制已完成，但标记失败，请再点一次复制。");
       showToast("网络异常，请重试");
       console.error(error);
       return false;
@@ -183,7 +171,6 @@ function init() {
     if (!localCopied) {
       const copied = await writeClipboard(copyText.value);
       if (!copied) {
-        setStatus("自动复制失败，请在文案框中长按或选择后复制。");
         showToast("复制失败，请手动复制");
         return;
       }
