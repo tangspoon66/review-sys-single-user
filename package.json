@@ -1,0 +1,19 @@
+{
+  "name": "hermess-agent",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "busboy": "^1.6.0",
+    "express": "^5.2.1",
+    "mammoth": "^1.12.0"
+  }
+}

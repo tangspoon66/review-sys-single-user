@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>深圳科学技术馆推介官 - 后台</title>
+    <style>
+      :root {
+        color: #eaf3ff;
+        background: #08111f;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: #eaf3ff;
+        background:
+          radial-gradient(circle at 8% 6%, rgba(70,166,255,.18), transparent 32%),
+          linear-gradient(180deg, #0a1424, #07101d 58%, #050a12);
+      }
+      button, textarea, input, select { font: inherit; }
+      .app { max-width: 1160px; margin: 0 auto; padding: 22px 16px 36px; }
+      .topbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+      h1 { margin: 0; font-size: 24px; line-height: 1.2; }
+      .muted { color: #98adc8; font-size: 13px; line-height: 1.5; }
+      .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+      .stat, .card {
+        border: 1px solid rgba(200,230,255,.14);
+        border-radius: 14px;
+        background: rgba(10,18,33,.66);
+        box-shadow: 0 16px 34px rgba(0,0,0,.18);
+      }
+      .stat { padding: 14px; }
+      .stat b { display: block; margin-bottom: 3px; color: #fff; font-size: 28px; }
+      .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 14px; }
+      .card { padding: 14px; }
+      .card-title { display:flex; align-items:center; justify-content:space-between; gap: 12px; margin-bottom: 12px; }
+      .card h2 { margin: 0; font-size: 16px; }
+      .form-grid { display: grid; gap: 10px; }
+      textarea, input[type=file], select {
+        width: 100%;
+        border: 1px solid rgba(200,230,255,.16);
+        border-radius: 12px;
+        background: rgba(255,255,255,.05);
+        color: #eaf3ff;
+        padding: 12px;
+        outline: none;
+      }
+      textarea { min-height: 190px; resize: vertical; line-height: 1.55; }
+      .inline-editor {
+        width: 100%;
+        min-height: 148px;
+        resize: vertical;
+        font-size: 16px;
+        font-weight: 650;
+        line-height: 1.55;
+      }
+      button {
+        border: 0;
+        border-radius: 12px;
+        min-height: 46px;
+        padding: 0 16px;
+        color: #fff;
+        background: linear-gradient(135deg, #46a6ff, #7b6dff);
+        font-weight: 800;
+      }
+      button.secondary { background: rgba(255,255,255,.09); }
+      button.danger { background: rgba(255,83,112,.88); }
+      .logout-btn { min-height: 38px; padding: 0 14px; border-radius: 10px; background: rgba(255,255,255,.09); font-size: 13px; }
+      .button-row { display: flex; flex-wrap: wrap; gap: 10px; }
+      .import-file-actions {
+        display: grid;
+        place-items: center;
+        min-height: 128px;
+        padding: 16px;
+      }
+      .primary-wide {
+        width: min(320px, 100%);
+        min-height: 52px;
+      }
+      .strategy { display: grid; gap: 10px; }
+      .strategy-option {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
+        border: 1px solid rgba(200,230,255,.12);
+        border-radius: 12px;
+        background: rgba(255,255,255,.04);
+      }
+      .strategy-option strong { display:block; margin-bottom: 3px; }
+      .split-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+      .split-tabs button {
+        flex: 1 1 0;
+        min-height: 42px;
+        padding: 0 12px;
+        border-radius: 10px;
+        background: rgba(255,255,255,.06);
+        color: #b9d8ff;
+      }
+      .split-tabs button.active {
+        background: linear-gradient(135deg, #46a6ff, #7b6dff);
+        color: #fff;
+      }
+      .mode-panel { display: none; }
+      .mode-panel.active { display: grid; gap: 10px; }
+      .upload-panel {
+        display: grid;
+        gap: 10px;
+        margin-top: 4px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(200,230,255,.12);
+      }
+      .upload-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .upload-actions.single { grid-template-columns: 1fr; }
+      .hidden { display: none !important; }
+      .lists { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 14px; }
+      .list { display: grid; gap: 8px; max-height: 430px; overflow: auto; padding-right: 4px; }
+      .list-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.035);
+      }
+      .list-toolbar button, .item-actions button {
+        min-height: 34px;
+        padding: 0 10px;
+        border-radius: 9px;
+        font-size: 12px;
+      }
+      .item {
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr);
+        gap: 9px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(255,255,255,.05);
+      }
+      .select-cell { display: grid; place-items: start center; padding-top: 3px; }
+      .item-body { min-width: 0; }
+      .item-copy {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .edit-actions { display: none; }
+      .item.editing .view-actions { display: none; }
+      .item.editing .edit-actions { display: flex; }
+      .item-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+      .tag { display:inline-flex; margin-top: 7px; padding: 3px 7px; border-radius: 999px; background: rgba(255,255,255,.08); color: #b8cbea; font-size: 12px; }
+      .image-main { display:flex; align-items:center; gap:10px; min-width: 0; }
+      .thumb { width: 68px; height: 68px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,.08); flex: 0 0 auto; }
+      .message { min-height: 22px; margin: 12px 2px 0; color: #b9d8ff; font-weight: 700; }
+      .message.error { color: #ffb4c3; }
+      .inline-btn { min-height: 38px; padding: 0 12px; border-radius: 10px; font-size: 13px; }
+      @media (max-width: 920px) {
+        .workspace, .lists, .stats { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <div class="topbar">
+        <div>
+          <h1>深圳科学技术馆推介官后台</h1>
+          <div class="muted">管理文案、图片和扫码分发策略。文案使用后即消耗，不会重复发放。</div>
+        </div>
+        <button id="logoutBtn" class="logout-btn" type="button">退出登录</button>
+      </div>
+
+      <section class="stats" id="stats"></section>
+
+      <section class="workspace">
+        <div class="card">
+          <div class="card-title">
+            <div>
+              <h2>导入文案</h2>
+              <div class="muted">先批量导入文件，再手工补充零散文案。重复项会自动跳过。</div>
+            </div>
+          </div>
+          <div class="split-tabs">
+            <button id="tabFile" class="active" type="button">模式一：文件批量导入</button>
+            <button id="tabPaste" type="button">模式二：单条手工导入</button>
+          </div>
+
+          <div id="panelFile" class="mode-panel active">
+            <div class="form-grid">
+              <input id="textFile" type="file" accept=".txt,.md,.docx" multiple hidden />
+              <div class="import-file-actions">
+                <button id="pickTextFileBtn" class="primary-wide" type="button">选择文件并导入</button>
+              </div>
+              <div class="muted">支持同时选择多个 txt / md / docx 文件，选完后自动导入。</div>
+            </div>
+          </div>
+
+          <div id="panelPaste" class="mode-panel">
+            <div class="form-grid">
+              <textarea id="textInput" placeholder="在这里粘贴多条文案，空行分隔。"></textarea>
+              <div class="button-row">
+                <button id="uploadPasteBtn" type="button">直接导入</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="card">
+          <div class="card-title">
+            <div>
+              <h2>图片策略</h2>
+              <div class="muted">图片可随时补充，用户用过即消耗。默认自动保存策略，不需要额外点保存。</div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <input id="imageFiles" type="file" accept="image/*" multiple hidden />
+            <input id="imageFolder" type="file" accept="image/*" multiple webkitdirectory directory hidden />
+            <input id="fixedImageFile" type="file" accept="image/*" hidden />
+
+            <div class="strategy">
+              <label class="strategy-option">
+                <input type="radio" name="imageMode" value="random" checked />
+                <span><strong>随机不重复</strong><span class="muted">每扫一次发一张未用图片，用户用过即消耗。可随时补充新图继续发放。</span></span>
+              </label>
+              <label class="strategy-option">
+                <input type="radio" name="imageMode" value="fixed" />
+                <span><strong>固定一张</strong><span class="muted">指定一张图片作为当前固定图，适合活动统一物料。</span></span>
+              </label>
+              <label class="strategy-option">
+                <input type="radio" name="imageMode" value="off" />
+                <span><strong>关闭图片</strong><span class="muted">只发文案，不要求用户保存图片。</span></span>
+              </label>
+            </div>
+
+            <div class="upload-panel">
+              <div class="muted" id="imageUploadHint">随机不重复模式：选择文件夹或多张图片，选完后自动上传并进入未使用图片库。</div>
+              <div class="button-row upload-actions" id="randomUploadActions">
+                <button id="pickImageFolderBtn" type="button">选择图片文件夹</button>
+                <button id="pickImageFilesBtn" class="secondary" type="button">选择多张图片</button>
+              </div>
+              <div class="button-row upload-actions single hidden" id="fixedUploadActions">
+                <button id="pickFixedImageBtn" type="button">选择 1 张固定图片并上传</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="lists">
+        <div class="card">
+          <div class="card-title"><h2>文案库</h2><span class="muted" id="textListHint">展示最近 80 条</span></div>
+          <div class="list-toolbar">
+            <button id="selectAllTexts" class="secondary" type="button">全选当前页</button>
+            <button id="clearTexts" class="secondary" type="button">取消选择</button>
+            <button id="resetTexts" class="secondary" type="button">批量恢复未使用</button>
+            <button id="markTextsUsed" class="secondary" type="button">批量标为已使用</button>
+            <button id="deleteTexts" class="danger" type="button">批量删除</button>
+          </div>
+          <div class="list" id="textList"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><h2>图片库</h2><span class="muted" id="imageListHint">展示最近 80 张</span></div>
+          <div class="list-toolbar">
+            <button id="selectAllImages" class="secondary" type="button">全选当前页</button>
+            <button id="clearImages" class="secondary" type="button">取消选择</button>
+            <button id="resetImages" class="secondary" type="button">批量恢复未使用</button>
+            <button id="markImagesUsed" class="secondary" type="button">批量标为已使用</button>
+            <button id="deleteImages" class="danger" type="button">批量删除</button>
+          </div>
+          <div class="list" id="imageList"></div>
+        </div>
+      </section>
+
+      <p class="message" id="message"></p>
+    </main>
+
+      <script>
+      const $ = (selector) => document.querySelector(selector);
+      const statsEl = $("#stats");
+      const textList = $("#textList");
+      const imageList = $("#imageList");
+      const message = $("#message");
+      const tabFile = $("#tabFile");
+      const tabPaste = $("#tabPaste");
+      const panelFile = $("#panelFile");
+      const panelPaste = $("#panelPaste");
+      const textFileInput = $("#textFile");
+      const imageFileInput = $("#imageFiles");
+      const imageFolderInput = $("#imageFolder");
+      const fixedImageInput = $("#fixedImageFile");
+      const imageUploadHint = $("#imageUploadHint");
+      const randomUploadActions = $("#randomUploadActions");
+      const fixedUploadActions = $("#fixedUploadActions");
+      const textListHint = $("#textListHint");
+      const imageListHint = $("#imageListHint");
+      const LIST_LIMIT = 80;
+      let latestSettings = { imageMode: "random", fixedImageId: "" };
+      let latestData = { texts: [], images: [] };
+
+      function escapeHTML(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        })[char]);
+      }
+
+      function showMessage(text, type = "") {
+        message.textContent = text;
+        message.classList.toggle("error", type === "error");
+      }
+
+      function statCard(title, value) {
+        return `<div class="stat"><b>${value}</b><span>${title}</span></div>`;
+      }
+
+      function modeLabel(mode) {
+        return ({ random: "随机不重复", fixed: "固定一张", off: "关闭图片" })[mode] || mode;
+      }
+
+      function textById(id) {
+        return latestData.texts.find((entry) => entry.id === id);
+      }
+
+      function selectedIds(kind) {
+        const selector = kind === "text" ? "[data-text-select]:checked" : "[data-image-select]:checked";
+        return [...document.querySelectorAll(selector)].map((input) => input.value);
+      }
+
+      async function postJSON(url, body) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (response.status === 401) {
+          location.replace("/login.html");
+          throw new Error("请先登录后台");
+        }
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.message || "操作失败");
+        return data;
+      }
+
+      async function patchJSON(url, body) {
+        const response = await fetch(url, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (response.status === 401) {
+          location.replace("/login.html");
+          throw new Error("请先登录后台");
+        }
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.message || "操作失败");
+        return data;
+      }
+
+      function renderImageUploadControls(mode) {
+        const fixedMode = mode === "fixed";
+        randomUploadActions.classList.toggle("hidden", fixedMode);
+        fixedUploadActions.classList.toggle("hidden", !fixedMode);
+
+        if (fixedMode) {
+          imageUploadHint.textContent = "固定一张模式：这里只能选择 1 张图片，上传后会自动设为当前固定图。";
+          return;
+        }
+
+        if (mode === "off") {
+          imageUploadHint.textContent = "关闭图片模式：可以先补充图片库；后续启用随机不重复后，会继续发放未使用图片。";
+          return;
+        }
+
+        imageUploadHint.textContent = "随机不重复模式：选择文件夹或多张图片，选完后自动上传并进入未使用图片库。";
+      }
+
+      function renderStats(data) {
+        statsEl.innerHTML = [
+          statCard("文案总数", data.counts.textTotal),
+          statCard("未使用文案", data.counts.textUnused),
+          statCard("图片总数", data.counts.imageTotal),
+          statCard("未使用图片", data.counts.imageUnused),
+        ].join("");
+      }
+
+      function renderMode(data) {
+        document.querySelectorAll('input[name="imageMode"]').forEach((radio) => {
+          radio.checked = data.settings.imageMode === radio.value;
+        });
+        renderImageUploadControls(data.settings.imageMode);
+      }
+
+      function renderFixedButtons() {
+        imageList.querySelectorAll("[data-fixed]").forEach((button) => {
+          button.textContent = button.dataset.fixed === latestSettings.fixedImageId ? "当前固定" : "设为固定";
+        });
+      }
+
+      async function refresh(options = {}) {
+        const renderLists = options.renderLists !== false;
+        const response = await fetch(`/api/admin/state?limit=${LIST_LIMIT}`);
+        if (response.status === 401) {
+          location.replace("/login.html");
+          return;
+        }
+        const data = await response.json();
+        latestSettings = data.settings;
+        latestData = data;
+
+        renderStats(data);
+        renderMode(data);
+        if (!renderLists) {
+          return;
+        }
+
+        textListHint.textContent = `展示最近 ${data.limit || LIST_LIMIT} 条`;
+        imageListHint.textContent = `展示最近 ${data.limit || LIST_LIMIT} 张`;
+
+        textList.innerHTML = data.texts.map((item) => `
+          <div class="item" data-text-item="${item.id}">
+            <label class="select-cell">
+              <input type="checkbox" data-text-select value="${item.id}">
+            </label>
+            <div class="item-body">
+              <div class="item-copy" data-text-copy>${escapeHTML(item.content)}</div>
+              <textarea class="inline-editor hidden" data-text-editor>${escapeHTML(item.content)}</textarea>
+              <span class="tag">${item.used ? "已使用" : "未使用"} · ${escapeHTML(item.sourceName || "手动")}</span>
+              <div class="item-actions view-actions">
+                <button class="secondary" type="button" data-edit-text="${item.id}">编辑</button>
+                <button class="secondary" type="button" data-reset-text="${item.id}">恢复未使用</button>
+                <button class="secondary" type="button" data-used-text="${item.id}">标为已使用</button>
+                <button class="danger" type="button" data-delete-text="${item.id}">删除</button>
+              </div>
+              <div class="item-actions edit-actions">
+                <button type="button" data-save-text="${item.id}">保存</button>
+                <button class="secondary" type="button" data-cancel-text="${item.id}">取消</button>
+              </div>
+            </div>
+          </div>
+        `).join("") || '<div class="muted">暂无文案</div>';
+
+        imageList.innerHTML = data.images.map((item) => `
+          <div class="item">
+            <label class="select-cell">
+              <input type="checkbox" data-image-select value="${item.id}">
+            </label>
+            <div class="item-body">
+              <div class="image-main">
+                <img class="thumb" src="${item.path}" alt="" loading="lazy" decoding="async">
+                <div class="item-copy">
+                  <div>${escapeHTML(item.originalName)}</div>
+                  <span class="tag">${item.used ? "已使用" : "未使用"} · ${escapeHTML(item.mimeType)}</span>
+                </div>
+              </div>
+              <div class="item-actions">
+                <button class="secondary" type="button" data-fixed="${item.id}">${item.id === data.settings.fixedImageId ? "当前固定" : "设为固定"}</button>
+                <button class="secondary" type="button" data-edit-image="${item.id}">改名</button>
+                <button class="secondary" type="button" data-reset-image="${item.id}">恢复未使用</button>
+                <button class="secondary" type="button" data-used-image="${item.id}">标为已使用</button>
+                <button class="danger" type="button" data-delete-image="${item.id}">删除</button>
+              </div>
+            </div>
+          </div>
+        `).join("") || '<div class="muted">暂无图片</div>';
+
+        showMessage(`当前图片策略：${modeLabel(data.settings.imageMode)}${data.settings.fixedImageId ? " · 已指定固定图" : ""}`);
+
+        imageList.querySelectorAll("[data-fixed]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            document.querySelector('input[name="imageMode"][value="fixed"]').checked = true;
+            latestSettings.imageMode = "fixed";
+            renderImageUploadControls("fixed");
+            await saveMode(button.dataset.fixed);
+          });
+        });
+      }
+
+      async function bulkTexts(action, ids) {
+        await postJSON("/api/admin/texts/bulk", { action, ids });
+        await refresh();
+        showMessage("文案库已更新");
+      }
+
+      async function bulkImages(action, ids) {
+        await postJSON("/api/admin/images/bulk", { action, ids });
+        await refresh();
+        showMessage("图片库已更新");
+      }
+
+      function toggleVisible(selector, checked) {
+        document.querySelectorAll(selector).forEach((input) => {
+          input.checked = checked;
+        });
+      }
+
+      async function uploadTexts() {
+        if (!textFileInput.files.length) return;
+        const form = new FormData();
+        for (const file of textFileInput.files) form.append("files", file);
+
+        showMessage("正在导入文案，请稍等...");
+        const response = await fetch("/api/admin/upload-texts", { method: "POST", body: form });
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.message || "导入失败");
+
+        textFileInput.value = "";
+        await refresh();
+        showMessage(`文案导入完成：新增 ${data.added} 条，重复跳过 ${data.skipped} 条`);
+      }
+
+      async function uploadPastedTexts() {
+        const form = new FormData();
+        const text = $("#textInput").value.trim();
+        if (text) form.append("text", text);
+        if (!text) return showMessage("请先输入要导入的文案");
+        showMessage("正在导入文案，请稍等...");
+        const response = await fetch("/api/admin/upload-texts", { method: "POST", body: form });
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.message || "导入失败");
+
+        $("#textInput").value = "";
+        await refresh();
+        showMessage(`文案导入完成：新增 ${data.added} 条，重复跳过 ${data.skipped} 条`);
+      }
+
+      async function uploadImages(input, options = {}) {
+        if (!input.files.length) return;
+        const allFiles = [...input.files].filter((file) => file.type.startsWith("image/"));
+        if (!allFiles.length) {
+          input.value = "";
+          return showMessage("没有找到可上传的图片文件", "error");
+        }
+
+        const maxFileSize = 30 * 1024 * 1024;
+        const oversized = allFiles.filter((file) => file.size > maxFileSize);
+        const validFiles = allFiles.filter((file) => file.size <= maxFileSize);
+        const selectedFiles = options.setFixed ? validFiles.slice(0, 1) : validFiles;
+
+        input.value = "";
+        if (!selectedFiles.length) {
+          return showMessage("图片超过单张 30MB 限制，请先压缩后再上传", "error");
+        }
+
+        const preparedFiles = await prepareImageFiles(selectedFiles, (current, total) => {
+          showMessage(`正在优化图片：${current}/${total}`);
+        });
+        const savedBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0)
+          - preparedFiles.reduce((sum, file) => sum + file.size, 0);
+
+        const batches = createImageBatches(preparedFiles);
+        const totalBytes = preparedFiles.reduce((sum, file) => sum + file.size, 0);
+        let uploadedBytesBeforeBatch = 0;
+        let added = 0;
+        const images = [];
+
+        for (let index = 0; index < batches.length; index += 1) {
+          const batch = batches[index];
+          const batchBytes = batch.reduce((sum, file) => sum + file.size, 0);
+          const data = await uploadImageBatch(batch, (event) => {
+            const currentLoaded = event.lengthComputable ? event.loaded : 0;
+            const uploadedBytes = uploadedBytesBeforeBatch + currentLoaded;
+            const percent = totalBytes ? Math.min(99, Math.round((uploadedBytes / totalBytes) * 100)) : 0;
+            showMessage(`正在上传图片：第 ${index + 1}/${batches.length} 批 · ${percent}% · ${formatBytes(uploadedBytes)} / ${formatBytes(totalBytes)}`);
+          });
+
+          uploadedBytesBeforeBatch += batchBytes;
+          added += data.added || 0;
+          images.push(...(data.images || []));
+          showMessage(`已上传第 ${index + 1}/${batches.length} 批，正在继续...`);
+        }
+
+        if (options.setFixed && images[0]?.id) {
+          document.querySelector('input[name="imageMode"][value="fixed"]').checked = true;
+          await saveMode(images[0].id);
+          await refresh();
+          showMessage(`固定图已更新：新增 ${added} 张${oversized.length ? `，${oversized.length} 张超过 30MB 已跳过` : ""}`);
+          return;
+        }
+
+        await refresh();
+        const optimizedText = savedBytes > 128 * 1024 ? `，已自动压缩 ${formatBytes(savedBytes)}` : "";
+        showMessage(`图片上传完成：新增 ${added} 张${optimizedText}${oversized.length ? `，${oversized.length} 张超过 30MB 已跳过` : ""}`);
+      }
+
+      function formatBytes(bytes) {
+        if (!bytes) return "0B";
+        const units = ["B", "KB", "MB", "GB"];
+        const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        return `${(bytes / (1024 ** exponent)).toFixed(exponent ? 1 : 0)}${units[exponent]}`;
+      }
+
+      function createImageBatches(files) {
+        const maxBatchBytes = 6 * 1024 * 1024;
+        const maxBatchFiles = 4;
+        const batches = [];
+        let current = [];
+        let currentBytes = 0;
+
+        for (const file of files) {
+          const nextWouldBeTooLarge = current.length && currentBytes + file.size > maxBatchBytes;
+          const nextWouldHaveTooManyFiles = current.length >= maxBatchFiles;
+          if (nextWouldBeTooLarge || nextWouldHaveTooManyFiles) {
+            batches.push(current);
+            current = [];
+            currentBytes = 0;
+          }
+          current.push(file);
+          currentBytes += file.size;
+        }
+
+        if (current.length) batches.push(current);
+        return batches;
+      }
+
+      async function prepareImageFiles(files, onProgress) {
+        const output = [];
+        for (let index = 0; index < files.length; index += 1) {
+          onProgress(index + 1, files.length);
+          output.push(await compressImageIfNeeded(files[index]));
+        }
+        return output;
+      }
+
+      async function compressImageIfNeeded(file) {
+        if (file.type === "image/gif" || file.size < 900 * 1024) return file;
+
+        try {
+          const bitmap = await loadImageBitmap(file);
+          const maxEdge = 1800;
+          const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+          const width = Math.max(1, Math.round(bitmap.width * scale));
+          const height = Math.max(1, Math.round(bitmap.height * scale));
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d");
+          context.fillStyle = "#fff";
+          context.fillRect(0, 0, width, height);
+          context.drawImage(bitmap, 0, 0, width, height);
+
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
+          if (!blob || blob.size >= file.size) return file;
+
+          const nextName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+          return new File([blob], nextName, { type: "image/jpeg", lastModified: file.lastModified });
+        } catch {
+          return file;
+        }
+      }
+
+      function loadImageBitmap(file) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          const url = URL.createObjectURL(file);
+          image.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(image);
+          };
+          image.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error("image load failed"));
+          };
+          image.src = url;
+        });
+      }
+
+      function uploadImageBatch(files, onProgress) {
+        return new Promise((resolve, reject) => {
+          const form = new FormData();
+          files.forEach((file) => form.append("files", file));
+
+          const xhr = new XMLHttpRequest();
+          let settled = false;
+          let stallTimer;
+          let lastLoaded = 0;
+
+          function finish(error, data) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(stallTimer);
+            error ? reject(error) : resolve(data);
+          }
+
+          function resetStallTimer() {
+            clearTimeout(stallTimer);
+            stallTimer = setTimeout(() => {
+              xhr.abort();
+              finish(new Error("上传进度超过 45 秒没有变化，网络可能中断了，请刷新后重试"));
+            }, 45000);
+          }
+
+          xhr.open("POST", "/api/admin/upload-images");
+          xhr.timeout = 3 * 60 * 1000;
+          xhr.upload.onloadstart = resetStallTimer;
+          xhr.upload.onprogress = (event) => {
+            if (event.loaded > lastLoaded) {
+              lastLoaded = event.loaded;
+              resetStallTimer();
+            }
+            onProgress(event);
+          };
+          xhr.onload = () => {
+            if (xhr.status === 401) {
+              location.replace("/login.html");
+              return finish(new Error("请先登录后台"));
+            }
+
+            let data;
+            try {
+              data = JSON.parse(xhr.responseText || "{}");
+            } catch {
+              return finish(new Error("服务器返回异常，请稍后重试"));
+            }
+
+            if (xhr.status >= 400 || !data.ok) {
+              return finish(new Error(data.message || `上传失败：HTTP ${xhr.status}`));
+            }
+
+            finish(null, data);
+          };
+          xhr.onerror = () => finish(new Error("网络连接中断，图片没有上传完成"));
+          xhr.ontimeout = () => finish(new Error("上传超时，请减少单次选择的图片数量或先压缩图片"));
+          xhr.onabort = () => finish(new Error("上传已中止，请刷新后重试"));
+          xhr.send(form);
+        });
+      }
+
+      async function saveMode(fixedImageId) {
+        const imageMode = document.querySelector('input[name="imageMode"]:checked').value;
+        const nextFixedImageId = fixedImageId !== undefined
+          ? fixedImageId
+          : (imageMode === "fixed" ? latestSettings.fixedImageId : "");
+        latestSettings = { ...latestSettings, imageMode, fixedImageId: nextFixedImageId };
+        renderImageUploadControls(imageMode);
+        renderFixedButtons();
+        showMessage("正在保存图片策略...");
+        const response = await fetch("/api/admin/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageMode, fixedImageId: nextFixedImageId }),
+        });
+        const data = await response.json();
+        if (!data.ok) throw new Error("保存失败");
+
+        latestSettings = data.settings;
+        renderImageUploadControls(data.settings.imageMode);
+        renderFixedButtons();
+        showMessage(`图片策略已保存：${modeLabel(data.settings.imageMode)}`);
+        await refresh({ renderLists: false });
+      }
+
+      function setTab(active) {
+        const fileActive = active === "file";
+        tabFile.classList.toggle("active", fileActive);
+        tabPaste.classList.toggle("active", !fileActive);
+        panelFile.classList.toggle("active", fileActive);
+        panelPaste.classList.toggle("active", !fileActive);
+      }
+
+      $("#pickTextFileBtn").addEventListener("click", () => {
+        textFileInput.click();
+      });
+      textFileInput.addEventListener("change", async () => {
+        try { await uploadTexts(); } catch (error) { showMessage(error.message); }
+      });
+      $("#uploadPasteBtn").addEventListener("click", async () => {
+        try { await uploadPastedTexts(); } catch (error) { showMessage(error.message); }
+      });
+      $("#pickImageFolderBtn").addEventListener("click", () => {
+        imageFolderInput.click();
+      });
+      $("#pickImageFilesBtn").addEventListener("click", () => {
+        imageFileInput.click();
+      });
+      $("#pickFixedImageBtn").addEventListener("click", () => {
+        fixedImageInput.click();
+      });
+      imageFolderInput.addEventListener("change", async () => {
+        try { await uploadImages(imageFolderInput); } catch (error) { showMessage(error.message); }
+      });
+      imageFileInput.addEventListener("change", async () => {
+        try { await uploadImages(imageFileInput); } catch (error) { showMessage(error.message); }
+      });
+      fixedImageInput.addEventListener("change", async () => {
+        try { await uploadImages(fixedImageInput, { setFixed: true }); } catch (error) { showMessage(error.message); }
+      });
+      document.querySelectorAll('input[name="imageMode"]').forEach((radio) => {
+        radio.addEventListener("change", async () => {
+          try {
+            latestSettings.imageMode = radio.value;
+            renderImageUploadControls(radio.value);
+            await saveMode();
+          } catch (error) {
+            showMessage(error.message);
+          }
+        });
+      });
+
+      textList.addEventListener("click", async (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+
+        try {
+          if (button.dataset.editText) {
+            const item = textById(button.dataset.editText);
+            const card = button.closest("[data-text-item]");
+            const copy = card.querySelector("[data-text-copy]");
+            const editor = card.querySelector("[data-text-editor]");
+            editor.value = item?.content || "";
+            copy.classList.add("hidden");
+            editor.classList.remove("hidden");
+            card.classList.add("editing");
+            editor.focus();
+            editor.setSelectionRange(editor.value.length, editor.value.length);
+            return;
+          }
+
+          if (button.dataset.cancelText) {
+            const card = button.closest("[data-text-item]");
+            const copy = card.querySelector("[data-text-copy]");
+            const editor = card.querySelector("[data-text-editor]");
+            editor.classList.add("hidden");
+            copy.classList.remove("hidden");
+            card.classList.remove("editing");
+            return;
+          }
+
+          if (button.dataset.saveText) {
+            const card = button.closest("[data-text-item]");
+            const editor = card.querySelector("[data-text-editor]");
+            await patchJSON(`/api/admin/texts/${button.dataset.saveText}`, { content: editor.value });
+            await refresh();
+            showMessage("文案已保存");
+            return;
+          }
+
+          if (button.dataset.resetText) {
+            await bulkTexts("reset", [button.dataset.resetText]);
+            return;
+          }
+
+          if (button.dataset.usedText) {
+            await bulkTexts("mark-used", [button.dataset.usedText]);
+            return;
+          }
+
+          if (button.dataset.deleteText) {
+            if (!confirm("确定删除这条文案吗？删除后不可恢复。")) return;
+            await bulkTexts("delete", [button.dataset.deleteText]);
+          }
+        } catch (error) {
+          showMessage(error.message);
+        }
+      });
+
+      imageList.addEventListener("click", async (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+
+        try {
+          if (button.dataset.editImage) {
+            const item = latestData.images.find((entry) => entry.id === button.dataset.editImage);
+            const next = prompt("编辑图片名称", item?.originalName || "");
+            if (next === null) return;
+            await patchJSON(`/api/admin/images/${button.dataset.editImage}`, { originalName: next });
+            await refresh();
+            showMessage("图片名称已保存");
+            return;
+          }
+
+          if (button.dataset.resetImage) {
+            await bulkImages("reset", [button.dataset.resetImage]);
+            return;
+          }
+
+          if (button.dataset.usedImage) {
+            await bulkImages("mark-used", [button.dataset.usedImage]);
+            return;
+          }
+
+          if (button.dataset.deleteImage) {
+            if (!confirm("确定删除这张图片吗？服务器文件也会一起删除。")) return;
+            await bulkImages("delete", [button.dataset.deleteImage]);
+          }
+        } catch (error) {
+          showMessage(error.message);
+        }
+      });
+
+      $("#selectAllTexts").addEventListener("click", () => toggleVisible("[data-text-select]", true));
+      $("#clearTexts").addEventListener("click", () => toggleVisible("[data-text-select]", false));
+      $("#resetTexts").addEventListener("click", async () => {
+        try { await bulkTexts("reset", selectedIds("text")); } catch (error) { showMessage(error.message); }
+      });
+      $("#markTextsUsed").addEventListener("click", async () => {
+        try { await bulkTexts("mark-used", selectedIds("text")); } catch (error) { showMessage(error.message); }
+      });
+      $("#deleteTexts").addEventListener("click", async () => {
+        const ids = selectedIds("text");
+        if (!ids.length) return showMessage("请先选择文案");
+        if (!confirm(`确定删除 ${ids.length} 条文案吗？删除后不可恢复。`)) return;
+        try { await bulkTexts("delete", ids); } catch (error) { showMessage(error.message); }
+      });
+
+      $("#selectAllImages").addEventListener("click", () => toggleVisible("[data-image-select]", true));
+      $("#clearImages").addEventListener("click", () => toggleVisible("[data-image-select]", false));
+      $("#resetImages").addEventListener("click", async () => {
+        try { await bulkImages("reset", selectedIds("image")); } catch (error) { showMessage(error.message); }
+      });
+      $("#markImagesUsed").addEventListener("click", async () => {
+        try { await bulkImages("mark-used", selectedIds("image")); } catch (error) { showMessage(error.message); }
+      });
+      $("#deleteImages").addEventListener("click", async () => {
+        const ids = selectedIds("image");
+        if (!ids.length) return showMessage("请先选择图片");
+        if (!confirm(`确定删除 ${ids.length} 张图片吗？服务器文件也会一起删除。`)) return;
+        try { await bulkImages("delete", ids); } catch (error) { showMessage(error.message); }
+      });
+      $("#logoutBtn").addEventListener("click", async () => {
+        await fetch("/api/auth/logout", { method: "POST" });
+        location.replace("/login.html");
+      });
+
+      tabFile.addEventListener("click", () => setTab("file"));
+      tabPaste.addEventListener("click", () => setTab("paste"));
+
+      refresh();
+    </script>
+  </body>
+</html>

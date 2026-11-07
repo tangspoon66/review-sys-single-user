@@ -1,0 +1,13 @@
+services:
+  single-user:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: "5177"
+    ports:
+      - "127.0.0.1:5177:5177"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>深圳科学技术馆推介官</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="brand">
+        <div class="brand-copy">
+          <p class="brand-line brand-line-single">深圳科学技术馆 - 推介官</p>
+        </div>
+        <img class="brand-sprite" src="./assets/coming-soon-transparent.gif" alt="小科小探AI 动效" loading="lazy" decoding="async" fetchpriority="low" />
+        <img class="brand-logo" src="./assets/logo-white.png" alt="深圳科学技术馆推介官" decoding="async" />
+      </header>
+
+      <section class="copy-panel" aria-label="笔记文案">
+        <div class="panel-head"><span>笔记文案</span></div>
+        <textarea id="copyText" readonly aria-label="小红书笔记文案"></textarea>
+        <button id="copyButton" class="copy-float" type="button">一键复制文案</button>
+      </section>
+
+      <section class="preview" aria-label="本次图片">
+        <img id="postImage" alt="小红书发布图片" decoding="async" />
+        <div class="preview-overlay">长按保存图片</div>
+      </section>
+
+      <p id="status" class="status" role="status"></p>
+
+      <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

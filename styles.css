@@ -1,0 +1,290 @@
+:root {
+  color: #eef6ff;
+  background: #07111f;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #eef6ff;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(70, 166, 255, 0.2), transparent 34%),
+    radial-gradient(circle at 84% 12%, rgba(123, 109, 255, 0.14), transparent 30%),
+    linear-gradient(180deg, rgba(7, 17, 31, 0.96), rgba(7, 17, 31, 0.82)),
+    #07111f;
+}
+
+body.bg-ready {
+  background:
+    linear-gradient(180deg, rgba(7, 17, 31, 0.38), rgba(7, 17, 31, 0.74)),
+    url("./assets/space-bg.jpg") center top / cover no-repeat fixed,
+    #07111f;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(80, 160, 255, 0.18), transparent 26%),
+    radial-gradient(circle at 82% 18%, rgba(110, 190, 255, 0.12), transparent 22%),
+    linear-gradient(180deg, rgba(4, 10, 19, 0.16), rgba(4, 10, 19, 0.52));
+  pointer-events: none;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.app {
+  position: relative;
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding: 20px 16px 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 10px 10px 10px 12px;
+  border: 1px solid rgba(200, 230, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(5, 12, 24, 0.34);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
+}
+
+.brand-logo {
+  display: block;
+  width: 74px;
+  height: auto;
+  object-fit: contain;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.brand-copy {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.brand-sprite {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.brand-line {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: #f7fbff;
+}
+
+.brand-line-single {
+  font-size: clamp(16px, 3.6vw, 22px);
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.copy-panel {
+  overflow: hidden;
+  border: 1px solid rgba(200, 230, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(9, 18, 33, 0.52);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(200, 230, 255, 0.08);
+  color: #dcecff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px 14px;
+  border: 0;
+  resize: vertical;
+  color: #eef6ff;
+  background: transparent;
+  line-height: 1.55;
+  outline: none;
+}
+
+.copy-float {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(100% - 24px);
+  min-height: 54px;
+  margin: 0 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #46a6ff, #7b6dff);
+  box-shadow: 0 16px 30px rgba(70, 166, 255, 0.24);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.copy-float:active {
+  transform: translateY(1px);
+}
+
+.preview {
+  position: relative;
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(200, 230, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(9, 18, 33, 0.5);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.preview img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.preview-overlay {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: min(88%, 390px);
+  min-height: 90px;
+  padding: 0 32px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(5, 12, 24, 0.62);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.status {
+  min-height: 22px;
+  margin: 12px 4px 0;
+  color: #b9d8ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  z-index: 9999;
+  width: min(78vw, 320px);
+  min-height: 72px;
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  color: #f8fbff;
+  background: rgba(7, 14, 25, 0.94);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast.show {
+  display: flex;
+  animation: toast-pop 1s ease-out both;
+}
+
+@keyframes toast-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.96);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (max-width: 420px) {
+  .app {
+    padding: 14px 12px 20px;
+  }
+
+  .brand-logo {
+    width: 68px;
+  }
+
+  .brand-line-single {
+    font-size: 18px;
+  }
+
+  .brand-sprite {
+    width: 40px;
+    height: 40px;
+  }
+
+  .preview-overlay {
+    min-width: 88%;
+    min-height: 82px;
+    font-size: 22px;
+  }
+
+  .copy-float {
+    width: calc(100% - 18px);
+    margin: 0 9px 12px;
+  }
+}
