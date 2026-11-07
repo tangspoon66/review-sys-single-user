@@ -1,6 +1,7 @@
 const express = require("express");
 const busboy = require("busboy");
 const mammoth = require("mammoth");
+const QRCode = require("qrcode");
 const Database = require("better-sqlite3");
 const fs = require("fs");
 const path = require("path");
@@ -91,6 +92,7 @@ db.exec("CREATE INDEX IF NOT EXISTS idx_images_reservation ON images(reservation
 const defaultSettings = {
   imageMode: "random",
   fixedImageId: "",
+  publicBaseUrl: "",
 };
 
 const getSettingStmt = db.prepare("SELECT value FROM settings WHERE key = ?");
@@ -373,10 +375,47 @@ function getSettings() {
   return settings;
 }
 
-function saveSettings(settings) {
+function saveImageSettings(settings) {
   const mode = ["random", "fixed", "off"].includes(settings.imageMode) ? settings.imageMode : "random";
   setSettingStmt.run("imageMode", mode);
   setSettingStmt.run("fixedImageId", settings.fixedImageId || "");
+}
+
+function normalizePublicBase(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  if (url.username || url.password || url.search || url.hash) return null;
+  if (url.pathname !== "/" && url.pathname !== "") return null;
+  return url.origin;
+}
+
+function savePublicBase(value) {
+  const normalized = normalizePublicBase(value);
+  if (normalized === null) {
+    const error = new Error("公开地址需要以 http:// 或 https:// 开头，不要带路径、账号或问号");
+    error.statusCode = 400;
+    throw error;
+  }
+  setSettingStmt.run("publicBaseUrl", normalized);
+}
+
+function requestPublicOrigin(req) {
+  const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+  const proto = forwardedProto || req.protocol || "http";
+  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim();
+  if (!host || !/^https?$/.test(proto)) return "";
+  return `${proto}://${host}`;
+}
+
+function sectionEntryUrl(base, sectionId) {
+  return `${String(base || "").replace(/\/+$/, "")}/?s=${sectionId}`;
 }
 
 function clearFixedImageIfNeeded(ids) {
@@ -523,27 +562,6 @@ function getSectionRow(id) {
   return db.prepare(`${sectionSelectSql} WHERE s.id = ?`).get(id);
 }
 
-function listEnabledSections() {
-  return db.prepare(`
-    ${sectionSelectSql}
-    WHERE s.enabled = 1
-    ORDER BY s.sort_order ASC, s.created_at ASC, s.id ASC
-  `).all();
-}
-
-function getCampaignState() {
-  const sections = listEnabledSections();
-  if (!sections.length || sections.some((section) => Number(section.text_unused) === 0)) {
-    return { ok: false, message: EXHAUSTED_MESSAGE, sections: [] };
-  }
-
-  return {
-    ok: true,
-    message: "ok",
-    sections: sections.map((section) => ({ id: section.id, name: section.name })),
-  };
-}
-
 function reserveForSection(section) {
   const reserve = db.transaction(() => {
     const current = now();
@@ -609,13 +627,11 @@ function reserveForSection(section) {
 
 function previewSection(sectionId) {
   const section = getSectionRow(sectionId);
-  if (!section || !section.enabled) {
-    return { status: 404, body: { ok: false, message: "板块不存在" } };
+  if (!section) {
+    return { status: 404, body: { ok: false, code: "missing", message: "这个入口无效" } };
   }
-
-  const campaign = getCampaignState();
-  if (!campaign.ok) {
-    return { status: 200, body: { ok: false, message: EXHAUSTED_MESSAGE, text: "", image: "" } };
+  if (!section.enabled) {
+    return { status: 403, body: { ok: false, code: "disabled", message: "这个入口已停用" } };
   }
 
   const reserved = reserveForSection(section);
@@ -646,7 +662,7 @@ function commitReservation(textId, token) {
   const commit = db.transaction(() => {
     const text = db.prepare("SELECT * FROM texts WHERE id = ?").get(textId);
     if (!text || text.used || text.reservation_token !== token || !text.reserved_until) {
-      return { ok: false, message: "文案已失效，请重新选择板块" };
+      return { ok: false, message: "文案已失效，请重新打开二维码" };
     }
 
     if (text.reserved_until < now()) {
@@ -656,7 +672,7 @@ function commitReservation(textId, token) {
         WHERE id = ? AND used = 0
       `).run(textId);
       releaseImageToken(token);
-      return { ok: false, message: "文案已失效，请重新选择板块" };
+      return { ok: false, message: "文案已失效，请重新打开二维码" };
     }
 
     const usedAt = now();
@@ -665,7 +681,7 @@ function commitReservation(textId, token) {
       SET used = 1, used_at = ?, reserved_until = NULL, reservation_token = NULL
       WHERE id = ? AND reservation_token = ? AND used = 0
     `).run(usedAt, textId, token).changes;
-    if (!changed) return { ok: false, message: "文案已失效，请重新选择板块" };
+    if (!changed) return { ok: false, message: "文案已失效，请重新打开二维码" };
 
     const settings = getSettings();
     if (settings.imageMode === "random") {
@@ -732,7 +748,6 @@ function serializeState(limit = 80, sectionId = "") {
     counts,
     limit: listLimit,
     sectionId: requestedId,
-    campaignOpen: getCampaignState().ok,
     sections,
     texts,
     images: db.prepare("SELECT * FROM images ORDER BY created_at DESC LIMIT ?").all(listLimit).map(rowToImage),
@@ -856,12 +871,12 @@ app.post("/api/auth/logout", (req, res) => {
 });
 
 app.get("/api/sections", (req, res) => {
-  res.json(getCampaignState());
+  res.json({ ok: false, message: "请扫描对应板块的二维码", sections: [] });
 });
 
 app.post("/api/sections/:id/preview", (req, res) => {
   const id = cleanId(req.params.id);
-  if (!id) return res.status(400).json({ ok: false, message: "板块不存在" });
+  if (!id) return res.status(400).json({ ok: false, code: "missing", message: "这个入口无效" });
   const previousTextId = cleanId(req.body?.previousTextId);
   const previousToken = cleanToken(req.body?.previousReservationToken);
   if (previousTextId && previousToken) releaseReservation(previousTextId, previousToken);
@@ -885,7 +900,7 @@ app.post("/api/claim/release", (req, res) => {
 });
 
 app.get("/api/next", (req, res) => {
-  res.json({ ok: false, message: "请先选择板块", text: "", image: "" });
+  res.json({ ok: false, message: "请扫描对应板块的二维码", text: "", image: "" });
 });
 
 app.get("/api/admin/state", (req, res) => {
@@ -893,10 +908,47 @@ app.get("/api/admin/state", (req, res) => {
 });
 
 app.post("/api/admin/settings", (req, res) => {
-  const imageMode = typeof req.body?.imageMode === "string" ? req.body.imageMode : "random";
-  const fixedImageId = typeof req.body?.fixedImageId === "string" ? req.body.fixedImageId : "";
-  saveSettings({ imageMode, fixedImageId });
-  res.json({ ok: true, settings: getSettings() });
+  try {
+    if (req.body && Object.prototype.hasOwnProperty.call(req.body, "imageMode")) {
+      const imageMode = typeof req.body.imageMode === "string" ? req.body.imageMode : "random";
+      const fixedImageId = typeof req.body.fixedImageId === "string" ? req.body.fixedImageId : "";
+      saveImageSettings({ imageMode, fixedImageId });
+    }
+    if (req.body && Object.prototype.hasOwnProperty.call(req.body, "publicBaseUrl")) {
+      savePublicBase(req.body.publicBaseUrl);
+    }
+    res.json({ ok: true, settings: getSettings() });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ ok: false, message: error.message || "保存失败" });
+  }
+});
+
+app.get("/api/admin/sections/:id/qr", async (req, res) => {
+  try {
+    const id = cleanId(req.params.id);
+    const section = id ? db.prepare("SELECT id, name FROM sections WHERE id = ?").get(id) : null;
+    if (!section) return res.status(404).json({ ok: false, message: "板块不存在" });
+
+    const configured = normalizePublicBase(getSettings().publicBaseUrl);
+    const base = configured || requestPublicOrigin(req);
+    if (!base) return res.status(400).json({ ok: false, message: "请先设置站点公开地址" });
+
+    const png = await QRCode.toBuffer(sectionEntryUrl(base, section.id), {
+      type: "png",
+      width: 512,
+      margin: 1,
+      errorCorrectionLevel: "M",
+    });
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "no-store");
+    if (req.query.download === "1") {
+      const filename = encodeURIComponent(`${sanitizeBase(section.name) || "section"}-qr.png`);
+      res.setHeader("Content-Disposition", `attachment; filename="section-qr.png"; filename*=UTF-8''${filename}`);
+    }
+    res.send(png);
+  } catch (error) {
+    res.status(400).json({ ok: false, message: error.message || "二维码生成失败" });
+  }
 });
 
 app.post("/api/admin/sections", (req, res) => {

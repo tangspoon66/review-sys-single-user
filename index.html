@@ -16,10 +16,9 @@
         <img class="brand-logo" src="./assets/logo-white.png" alt="深圳科学技术馆推介官" decoding="async" />
       </header>
 
-      <section class="section-panel" id="sectionPanel" aria-label="选择板块">
-        <div class="panel-head"><span>选择板块</span></div>
-        <div id="sectionList" class="section-list"></div>
-        <p id="sectionHint" class="section-hint">请选择一个板块。选中后文案会出现在下方，复制成功才会标记已用。</p>
+      <section class="copy-panel" id="gatePanel" aria-label="扫码说明">
+        <div class="panel-head"><span>扫码领取</span></div>
+        <p class="gate-copy">请扫描现场对应板块的二维码。每个码只打开那一个板块的文案。</p>
       </section>
 
       <section class="copy-panel" id="copyPanel" hidden aria-label="笔记文案">
@@ -33,9 +32,8 @@
         <div class="preview-overlay">长按保存图片</div>
       </section>
 
-      <p id="exhausted" class="exhausted" hidden>次数已用完</p>
-      <p id="status" class="status" role="status">正在读取板块...</p>
-
+      <p id="notice" class="exhausted" hidden></p>
+      <p id="status" class="status" role="status"></p>
       <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
     </main>
 
