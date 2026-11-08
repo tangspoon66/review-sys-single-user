@@ -182,6 +182,15 @@ function normalizeText(content) {
   return content.trim().replace(/\s+/g, " ");
 }
 
+function cleanTextContent(content) {
+  return String(content || "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.trim().replace(/[^\S\n]+/g, " "))
+    .filter(Boolean)
+    .join("\n");
+}
+
 function normalizeIds(value) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.map((id) => String(id || "").trim()).filter(Boolean))];
@@ -309,7 +318,34 @@ function adminAuth(req, res, next) {
   res.status(401).json({ ok: false, message: "请先登录后台" });
 }
 
+const NUMBERED_HEADING = /^(\d{1,3})(?:[\s\u3000]+|[.、．)）][\s\u3000]*)([^#\s\u3000].{0,23})$/;
+
+// Documents like "01　遛娃妈妈 / 标题 / 正文 / #话题" spread one copy over several
+// paragraphs under a short numbered heading; the heading is a label, not copy.
+function splitNumberedEntries(raw) {
+  const lines = raw.replace(/\r\n?/g, "\n").split("\n").map((line) => line.trim());
+  const entries = [];
+  let current = null;
+  for (const line of lines) {
+    const heading = line.match(NUMBERED_HEADING);
+    if (heading) {
+      current = { number: Number(heading[1]), lines: [] };
+      entries.push(current);
+    } else if (current && line) {
+      current.lines.push(line);
+    }
+  }
+
+  if (entries.length < 2) return null;
+  const sequential = entries.every((entry, index) => index === 0 || entry.number === entries[index - 1].number + 1);
+  if (!sequential || entries.some((entry) => entry.lines.length === 0)) return null;
+  return entries.map((entry) => entry.lines.join("\n"));
+}
+
 function splitTextBlocks(raw) {
+  const numbered = splitNumberedEntries(raw);
+  if (numbered) return numbered.map(cleanTextContent).filter(Boolean);
+
   return raw
     .replace(/\r\n/g, "\n")
     .split(/\n{2,}/g)
@@ -444,13 +480,14 @@ function addTexts(items, sourceName, sectionId) {
   let skipped = 0;
   const insertMany = db.transaction((contents) => {
     for (const content of contents) {
-      const normalized = normalizeText(content);
+      const cleaned = cleanTextContent(content);
+      const normalized = normalizeText(cleaned);
       if (!normalized) continue;
       try {
         insertTextStmt.run({
           id: uid(),
           sectionId,
-          content: normalized,
+          content: cleaned,
           normalized,
           sourceName: uploadFilename(sourceName),
           createdAt: now(),
@@ -1000,14 +1037,14 @@ app.delete("/api/admin/sections/:id", (req, res) => {
 app.patch("/api/admin/texts/:id", (req, res) => {
   try {
     const id = cleanId(req.params.id);
-    const content = normalizeText(String(req.body?.content || ""));
+    const content = cleanTextContent(req.body?.content);
     if (!id || !content) return res.status(400).json({ ok: false, message: "文案不能为空" });
 
     const existing = db.prepare("SELECT id FROM texts WHERE id = ?").get(id);
     if (!existing) return res.status(404).json({ ok: false, message: "文案不存在" });
 
     try {
-      db.prepare("UPDATE texts SET content = ?, normalized = ? WHERE id = ?").run(content, content, id);
+      db.prepare("UPDATE texts SET content = ?, normalized = ? WHERE id = ?").run(content, normalizeText(content), id);
     } catch (error) {
       if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
         return res.status(409).json({ ok: false, message: "文案重复，已被系统拦截" });
