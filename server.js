@@ -32,10 +32,18 @@ const SESSION_SECRET = process.env.SESSION_SECRET || "";
 const AUTH_COOKIE = "szstm_admin_session";
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const RESERVATION_TTL_MS = 2 * 60 * 1000;
+
+function configuredDir(envName, fallback) {
+  const value = String(process.env[envName] || "").trim();
+  return value ? path.resolve(value) : fallback;
+}
+
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, "data");
-const UPLOAD_DIR = path.join(ROOT, "uploads");
+// Storage paths are not URL roots. DATA_DIR / UPLOAD_DIR only move files on disk.
+const DATA_DIR = configuredDir("DATA_DIR", path.join(ROOT, "data"));
+const UPLOAD_DIR = configuredDir("UPLOAD_DIR", path.join(ROOT, "uploads"));
 const IMAGE_DIR = path.join(UPLOAD_DIR, "images");
+const ASSET_DIR = path.join(ROOT, "assets");
 const DB_PATH = path.join(DATA_DIR, "app.db");
 const EXHAUSTED_MESSAGE = "次数已用完";
 
@@ -868,20 +876,16 @@ async function readMultipart(req) {
   });
 }
 
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  next();
+});
 app.use(express.json({ limit: "2mb" }));
 app.use("/api", (req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
   next();
 });
-app.use("/assets", express.static(path.join(ROOT, "assets"), {
-  immutable: true,
-  maxAge: "30d",
-}));
-app.use("/uploads", express.static(UPLOAD_DIR));
-app.use("/admin.html", adminAuth);
 app.use("/api/admin", adminAuth);
-app.get("/favicon.ico", (req, res) => res.status(204).end());
-app.use(express.static(ROOT, { extensions: ["html"] }));
 
 app.get("/api/auth/session", (req, res) => {
   res.json({ ok: true, authenticated: verifySessionToken(parseCookies(req)[AUTH_COOKIE]) });
@@ -1208,6 +1212,179 @@ app.post("/api/admin/upload-images", async (req, res) => {
   }
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Server running at http://${HOST}:${PORT}`);
+const PUBLIC_FILE_CACHE = "public, max-age=0";
+const ASSET_CACHE = "public, max-age=2592000, immutable";
+const IMAGE_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".bmp", ".ico",
+  ".heic", ".heif", ".tif", ".tiff", ".jfif", ".jpe",
+]);
+const PUBLIC_ROOT_FILES = new Map([
+  ["/", "index.html"],
+  ["/index.html", "index.html"],
+  ["/login.html", "login.html"],
+  ["/styles.css", "styles.css"],
+  ["/script.js", "script.js"],
+]);
+
+function decodePathFully(pathname) {
+  let current = pathname;
+  for (let i = 0; i < 8; i += 1) {
+    if (!/%[0-9a-fA-F]{2}/.test(current)) return current;
+    let decoded;
+    try {
+      decoded = decodeURIComponent(current);
+    } catch {
+      return null;
+    }
+    if (decoded.includes("\0")) return null;
+    if (decoded === current) return current;
+    current = decoded;
+  }
+  return /%[0-9a-fA-F]{2}/.test(current) ? null : current;
+}
+
+function canonicalRequestPath(req) {
+  const raw = String(req.originalUrl || "");
+  if (!raw || raw.includes("\0") || /%00/i.test(raw)) return { error: 400 };
+  const cut = raw.search(/[?#]/);
+  const pathOnly = cut === -1 ? raw : raw.slice(0, cut);
+  if (!pathOnly.startsWith("/")) return { error: 400 };
+
+  const decoded = decodePathFully(pathOnly);
+  if (decoded == null) return { error: 400 };
+  if (/[\u0000-\u001f\u007f]/.test(decoded)) return { error: 400 };
+
+  const parts = [];
+  for (const segment of decoded.replace(/\\/g, "/").split("/")) {
+    if (segment === "" || segment === ".") continue;
+    // Dot segments are rejected instead of resolved so a public prefix cannot be walked out of.
+    if (segment === "..") return { error: 400 };
+    parts.push(segment);
+  }
+  return { pathname: parts.length ? `/${parts.join("/")}` : "/" };
+}
+
+function isRealFileInside(rootDir, segments) {
+  let rootReal;
+  try {
+    rootReal = fs.realpathSync(rootDir);
+  } catch {
+    return null;
+  }
+  const candidate = path.resolve(rootReal, ...segments);
+  let real;
+  try {
+    real = fs.realpathSync(candidate);
+  } catch {
+    return null;
+  }
+  const relative = path.relative(rootReal, real);
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) return null;
+  const relativeParts = relative.split(path.sep);
+  if (relativeParts.some((part) => !part || part === ".." || part === "." || part.startsWith("."))) return null;
+  let stat;
+  try {
+    stat = fs.statSync(real);
+  } catch {
+    return null;
+  }
+  return stat.isFile() ? real : null;
+}
+
+function sendDiskFile(res, filePath, cacheControl) {
+  res.setHeader("Cache-Control", cacheControl);
+  res.sendFile(filePath, { dotfiles: "deny", acceptRanges: true }, (error) => {
+    if (!error || res.headersSent) return;
+    res.setHeader("Cache-Control", "no-store");
+    res.status(404).end();
+  });
+}
+
+function sendMappedRootFile(res, basename, cacheControl) {
+  const real = isRealFileInside(ROOT, [basename]);
+  if (!real || path.basename(real) !== basename) {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(404).end();
+    return;
+  }
+  sendDiskFile(res, real, cacheControl);
+}
+
+function sendTreeFile(res, rootDir, pathname, prefix, cacheControl) {
+  if (pathname !== prefix && !pathname.startsWith(`${prefix}/`)) return false;
+  const rest = pathname.slice(prefix.length + 1);
+  const segments = rest.split("/").filter(Boolean);
+  if (!segments.length || segments.some((segment) => segment === "." || segment === ".." || segment.startsWith("."))) {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(404).end();
+    return true;
+  }
+  const extension = path.extname(segments[segments.length - 1]).toLowerCase();
+  if (!IMAGE_EXTENSIONS.has(extension)) {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(404).end();
+    return true;
+  }
+  const real = isRealFileInside(rootDir, segments);
+  if (!real) {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(404).end();
+    return true;
+  }
+  sendDiskFile(res, real, cacheControl);
+  return true;
+}
+
+// The project root holds the database, source, and secrets. Only this allowlist is static.
+function servePublic(req, res, pathname) {
+  if (req.method !== "GET" && req.method !== "HEAD") return false;
+  if (pathname === "/favicon.ico") {
+    res.status(204).end();
+    return true;
+  }
+
+  const rootFile = PUBLIC_ROOT_FILES.get(pathname);
+  if (rootFile) {
+    sendMappedRootFile(res, rootFile, PUBLIC_FILE_CACHE);
+    return true;
+  }
+
+  if (pathname === "/admin.html") {
+    adminAuth(req, res, () => sendMappedRootFile(res, "admin.html", "private, no-store"));
+    return true;
+  }
+
+  if (pathname === "/assets" || pathname.startsWith("/assets/")) {
+    return sendTreeFile(res, ASSET_DIR, pathname, "/assets", ASSET_CACHE);
+  }
+
+  if (pathname === "/uploads/images" || pathname.startsWith("/uploads/images/")) {
+    return sendTreeFile(res, IMAGE_DIR, pathname, "/uploads/images", PUBLIC_FILE_CACHE);
+  }
+
+  return false;
+}
+
+app.use((req, res, next) => {
+  const canonical = canonicalRequestPath(req);
+  if (canonical.error) {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(canonical.error).end();
+    return;
+  }
+
+  const { pathname } = canonical;
+  if (pathname === "/api" || pathname.startsWith("/api/")) return next();
+  if (servePublic(req, res, pathname)) return;
+
+  res.setHeader("Cache-Control", "no-store");
+  res.status(404).end();
 });
+
+if (require.main === module) {
+  app.listen(PORT, HOST, () => {
+    console.log(`Server running at http://${HOST}:${PORT}`);
+  });
+}
+
+module.exports = { app };
