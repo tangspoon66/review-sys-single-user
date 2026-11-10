@@ -1,105 +1,233 @@
 function init() {
-  const postImage = document.querySelector("#postImage");
-  const preview = document.querySelector(".preview");
+  const gatePanel = document.querySelector("#gatePanel");
+  const copyPanel = document.querySelector("#copyPanel");
+  const copyHeading = document.querySelector("#copyHeading");
   const copyText = document.querySelector("#copyText");
   const copyButton = document.querySelector("#copyButton");
-  const statusText = document.querySelector("#status");
+  const imagePreview = document.querySelector("#imagePreview");
+  const postImage = document.querySelector("#postImage");
+  const notice = document.querySelector("#notice");
   const toast = document.querySelector("#toast");
 
-  if (!postImage || !preview || !copyText || !copyButton || !statusText || !toast) {
+  if (!gatePanel || !copyPanel || !copyText || !copyButton || !notice || !toast) {
     console.error("Missing required UI elements.");
     return;
   }
 
+  const sectionId = new URLSearchParams(location.search).get("s") || "";
   let toastTimer;
-
-  function setStatus(message) {
-    statusText.textContent = message;
-  }
+  let activeReservation = null;
+  let localCopied = false;
+  let copyCommitted = false;
+  let commitStarted = false;
 
   function showToast(message) {
     toast.textContent = message;
     toast.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("show"), 1000);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
   }
 
-  async function copyPostText() {
-    const text = copyText.value;
-    let copied = false;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      copied = true;
-    } catch {
-      copyText.focus();
-      copyText.select();
-      copied = document.execCommand("copy");
-    }
-
-    if (copied) {
-      setStatus("文案已复制，可以直接粘贴到小红书。");
-      showToast("复制成功");
-      return true;
-    }
-
-    setStatus("自动复制失败，请点击文案框后手动复制。");
-    showToast("复制失败，请手动复制");
-    return false;
+  function afterPaint(callback) {
+    requestAnimationFrame(() => setTimeout(callback, 0));
   }
 
-  async function render() {
-    try {
-      setStatus("正在获取素材...");
-      const response = await fetch("/api/next");
-      const data = await response.json();
+  let decorationsLoaded = false;
+  function loadDecorations() {
+    if (decorationsLoaded) return;
+    decorationsLoaded = true;
+    document.querySelectorAll(".brand source[data-srcset]").forEach((source) => {
+      source.srcset = source.dataset.srcset;
+    });
+    document.querySelectorAll(".brand img[data-src]").forEach((image) => {
+      image.src = image.dataset.src;
+    });
+    document.body.classList.add("bg-ready");
+  }
 
-      if (!data.ok) {
-        preview.hidden = true;
-        postImage.removeAttribute("src");
-        copyText.value = data.message || "次数已用完";
-        setStatus(data.message || "次数已用完");
-        return;
-      }
+  function hideCopy() {
+    copyPanel.hidden = true;
+    copyText.value = "";
+    imagePreview.hidden = true;
+    postImage.removeAttribute("src");
+  }
 
+  function showGate() {
+    hideCopy();
+    notice.hidden = true;
+    gatePanel.hidden = false;
+    afterPaint(loadDecorations);
+  }
+
+  function showProblem(message) {
+    hideCopy();
+    gatePanel.hidden = true;
+    notice.hidden = false;
+    notice.textContent = message || "这个入口无效";
+    activeReservation = null;
+    afterPaint(loadDecorations);
+  }
+
+  function showCopy(data) {
+    activeReservation = { textId: data.textId, reservationToken: data.reservationToken };
+    localCopied = false;
+    copyCommitted = false;
+    commitStarted = false;
+    gatePanel.hidden = true;
+    notice.hidden = true;
+    copyHeading.textContent = data.sectionName || "笔记文案";
+    copyText.value = data.text || "";
+    copyPanel.hidden = false;
+    copyButton.disabled = false;
+    imagePreview.hidden = true;
+    postImage.removeAttribute("src");
+    afterPaint(() => {
       if (data.image) {
-        preview.hidden = false;
         postImage.src = data.image;
-      } else {
-        preview.hidden = true;
-        postImage.removeAttribute("src");
+        imagePreview.hidden = false;
       }
+      loadDecorations();
+    });
+  }
 
-      copyText.value = data.text;
-      setStatus("素材已就绪，请点击按钮复制文案。");
+  async function releaseActive(keepalive = false) {
+    if (!activeReservation || copyCommitted || commitStarted) return;
+    const payload = activeReservation;
+    activeReservation = null;
+    try {
+      await fetch("/api/claim/release", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive,
+      });
     } catch (error) {
-      preview.hidden = true;
-      postImage.removeAttribute("src");
-      copyText.value = "素材加载失败，请稍后重试。";
-      setStatus("素材加载失败，请稍后重试。");
       console.error(error);
     }
   }
 
-  function loadBackgroundWhenIdle() {
-    const load = () => {
-      const image = new Image();
-      image.onload = () => document.body.classList.add("bg-ready");
-      image.src = "./assets/space-bg.jpg";
-    };
-
-    if ("requestIdleCallback" in window) {
-      requestIdleCallback(load, { timeout: 1600 });
+  async function loadEntry() {
+    if (!sectionId) {
+      showGate();
+      return;
+    }
+    if (!/^[a-f0-9]{8,32}$/i.test(sectionId)) {
+      showProblem("这个入口无效");
       return;
     }
 
-    setTimeout(load, 600);
+    const early = window.__sectionPreview;
+    window.__sectionPreview = null;
+    const data = early
+      ? await early
+      : await fetch(`/api/sections/${encodeURIComponent(sectionId)}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      }).then((response) => response.json());
+    if (!data.ok) {
+      showProblem(data.message || "这个入口无效");
+      return;
+    }
+    showCopy(data);
   }
 
-  copyButton.addEventListener("click", copyPostText);
+  async function writeClipboard(text) {
+    if (!text) return false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    try {
+      copyText.focus();
+      copyText.select();
+      return document.execCommand("copy");
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }
 
-  loadBackgroundWhenIdle();
-  render();
+  async function commitCopy() {
+    if (copyCommitted || commitStarted || !activeReservation) return false;
+    commitStarted = true;
+    try {
+      const response = await fetch("/api/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify(activeReservation),
+      });
+      const data = await response.json();
+      if (!data.ok) {
+        commitStarted = false;
+        if (String(data.message || "").includes("失效")) {
+          activeReservation = null;
+          localCopied = false;
+          showProblem(data.message);
+          showToast(data.message);
+          return false;
+        }
+        showToast("标记失败，请重试");
+        return false;
+      }
+      copyCommitted = true;
+      activeReservation = null;
+      showToast("复制成功");
+      return true;
+    } catch (error) {
+      commitStarted = false;
+      showToast("网络异常，请重试");
+      console.error(error);
+      return false;
+    }
+  }
+
+  async function copyFromPanel() {
+    if (!copyText.value || copyPanel.hidden) return;
+    if (copyCommitted) {
+      showToast("已经复制");
+      return;
+    }
+    if (!localCopied) {
+      const copied = await writeClipboard(copyText.value);
+      if (!copied) {
+        showToast("复制失败，请手动复制");
+        return;
+      }
+      localCopied = true;
+    }
+    await commitCopy();
+  }
+
+  copyButton.addEventListener("click", () => {
+    copyFromPanel();
+  });
+  copyText.addEventListener("copy", () => {
+    if (!copyText.value || copyPanel.hidden) return;
+    localCopied = true;
+    commitCopy();
+  });
+  window.addEventListener("pagehide", () => {
+    if (!activeReservation || copyCommitted || commitStarted) return;
+    fetch("/api/claim/release", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(activeReservation),
+      keepalive: true,
+    }).catch(() => {});
+  });
+
+  // A stalled copy request should not leave the page without its decorations forever.
+  setTimeout(loadDecorations, 4000);
+  loadEntry().catch((error) => {
+    showProblem("素材加载失败，请稍后重试。");
+    console.error(error);
+  });
 }
 
 if (document.readyState === "loading") {

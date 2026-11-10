@@ -6,606 +6,643 @@
     <title>深圳科学技术馆推介官 - 后台</title>
     <style>
       :root {
-        color: #eaf3ff;
-        background: #08111f;
+        color-scheme: dark;
+        --bg: #07111c;
+        --panel: rgba(10, 20, 36, 0.86);
+        --panel-2: rgba(255, 255, 255, 0.04);
+        --line: rgba(188, 214, 255, 0.16);
+        --text: #eaf3ff;
+        --muted: #93a8c4;
+        --accent: #4aa6ff;
+        --accent-2: #7b6dff;
+        --danger: #ff5b78;
+        --ok: #b6ffd0;
+        --warn: #ffe1a3;
+        --shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+        --radius: 16px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       }
       * { box-sizing: border-box; }
       body {
         margin: 0;
         min-height: 100vh;
-        color: #eaf3ff;
+        color: var(--text);
         background:
-          radial-gradient(circle at 8% 6%, rgba(70,166,255,.18), transparent 32%),
-          linear-gradient(180deg, #0a1424, #07101d 58%, #050a12);
+          radial-gradient(circle at 8% 0%, rgba(74, 166, 255, 0.18), transparent 28%),
+          linear-gradient(180deg, #0b1626, var(--bg) 42%);
       }
-      button, textarea, input, select { font: inherit; }
-      .app { max-width: 1160px; margin: 0 auto; padding: 22px 16px 36px; }
-      .topbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
-      h1 { margin: 0; font-size: 24px; line-height: 1.2; }
-      .muted { color: #98adc8; font-size: 13px; line-height: 1.5; }
-      .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
-      .stat, .card {
-        border: 1px solid rgba(200,230,255,.14);
-        border-radius: 14px;
-        background: rgba(10,18,33,.66);
-        box-shadow: 0 16px 34px rgba(0,0,0,.18);
+      button, input, textarea, select { font: inherit; color: inherit; }
+      button, a.btn { cursor: pointer; }
+      .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 22px 0 48px; }
+      .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+      .eyebrow { margin: 0 0 4px; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+      h1, h2, h3, p { margin: 0; }
+      h1 { font-size: 28px; line-height: 1.15; }
+      h2 { font-size: 18px; line-height: 1.3; }
+      .lead { margin-top: 6px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+      .status {
+        min-height: 22px;
+        margin: 0 0 14px;
+        color: #c5dcff;
+        font-size: 14px;
+        font-weight: 750;
       }
-      .stat { padding: 14px; }
-      .stat b { display: block; margin-bottom: 3px; color: #fff; font-size: 28px; }
-      .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 14px; }
-      .card { padding: 14px; }
-      .card-title { display:flex; align-items:center; justify-content:space-between; gap: 12px; margin-bottom: 12px; }
-      .card h2 { margin: 0; font-size: 16px; }
-      .form-grid { display: grid; gap: 10px; }
-      textarea, input[type=file], select {
+      .status.error { color: #ffb4c2; }
+      .layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 16px; align-items: start; }
+      .stack { display: grid; gap: 16px; }
+      .panel {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+      .panel + .panel, .stack > .panel + .panel { margin-top: 0; }
+      .panel-head { margin-bottom: 14px; }
+      .hint, .muted { color: var(--muted); font-size: 13px; line-height: 1.55; font-weight: 650; }
+      label { display: grid; gap: 6px; font-size: 13px; font-weight: 800; }
+      input[type=text], input[type=number], input[type=url], textarea, select {
         width: 100%;
-        border: 1px solid rgba(200,230,255,.16);
+        border: 1px solid var(--line);
         border-radius: 12px;
-        background: rgba(255,255,255,.05);
-        color: #eaf3ff;
-        padding: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 11px 12px;
         outline: none;
       }
-      textarea { min-height: 190px; resize: vertical; line-height: 1.55; }
-      .inline-editor {
-        width: 100%;
-        min-height: 148px;
-        resize: vertical;
-        font-size: 16px;
-        font-weight: 650;
-        line-height: 1.55;
-      }
-      button {
+      textarea { min-height: 140px; resize: vertical; line-height: 1.55; font-weight: 650; }
+      input:focus, textarea:focus { border-color: rgba(74, 166, 255, 0.8); box-shadow: 0 0 0 3px rgba(74, 166, 255, 0.16); }
+      .check { display: flex; align-items: flex-start; gap: 8px; font-weight: 700; }
+      .check input { margin-top: 3px; }
+      .form { display: grid; gap: 12px; }
+      .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+      .btn, a.btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 14px;
         border: 0;
         border-radius: 12px;
-        min-height: 46px;
-        padding: 0 16px;
-        color: #fff;
-        background: linear-gradient(135deg, #46a6ff, #7b6dff);
+        background: rgba(255, 255, 255, 0.08);
+        color: white;
         font-weight: 800;
+        text-decoration: none;
       }
-      button.secondary { background: rgba(255,255,255,.09); }
-      button.danger { background: rgba(255,83,112,.88); }
-      .logout-btn { min-height: 38px; padding: 0 14px; border-radius: 10px; background: rgba(255,255,255,.09); font-size: 13px; }
-      .button-row { display: flex; flex-wrap: wrap; gap: 10px; }
-      .import-file-actions {
-        display: grid;
-        place-items: center;
-        min-height: 128px;
-        padding: 16px;
-      }
-      .primary-wide {
-        width: min(320px, 100%);
-        min-height: 52px;
-      }
-      .strategy { display: grid; gap: 10px; }
-      .strategy-option {
-        display: grid;
-        grid-template-columns: 22px minmax(0, 1fr);
-        gap: 10px;
-        align-items: start;
+      .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+      .btn.danger { background: var(--danger); }
+      .btn.small { min-height: 32px; padding: 0 10px; border-radius: 9px; font-size: 12px; }
+      .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+      .section-nav { display: grid; gap: 8px; margin-top: 14px; }
+      .section-card {
+        width: 100%;
         padding: 12px;
-        border: 1px solid rgba(200,230,255,.12);
-        border-radius: 12px;
-        background: rgba(255,255,255,.04);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel-2);
+        text-align: left;
       }
-      .strategy-option strong { display:block; margin-bottom: 3px; }
-      .split-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
-      .split-tabs button {
-        flex: 1 1 0;
-        min-height: 42px;
-        padding: 0 12px;
-        border-radius: 10px;
-        background: rgba(255,255,255,.06);
-        color: #b9d8ff;
-      }
-      .split-tabs button.active {
-        background: linear-gradient(135deg, #46a6ff, #7b6dff);
-        color: #fff;
-      }
-      .mode-panel { display: none; }
-      .mode-panel.active { display: grid; gap: 10px; }
-      .upload-panel {
-        display: grid;
-        gap: 10px;
-        margin-top: 4px;
-        padding-top: 12px;
-        border-top: 1px solid rgba(200,230,255,.12);
-      }
-      .upload-actions { display: grid; grid-template-columns: 1fr 1fr; }
-      .upload-actions.single { grid-template-columns: 1fr; }
-      .hidden { display: none !important; }
-      .lists { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 14px; }
-      .list { display: grid; gap: 8px; max-height: 430px; overflow: auto; padding-right: 4px; }
-      .list-toolbar {
+      .section-card.selected { border-color: rgba(74, 166, 255, 0.9); background: rgba(74, 166, 255, 0.14); }
+      .section-card strong { display: block; margin-bottom: 4px; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .chip { padding: 3px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); color: #c9d8ee; font-size: 12px; font-weight: 750; }
+      .chip.now { background: rgba(74, 166, 255, 0.28); color: white; }
+      .current-bar {
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-        padding: 10px;
-        border-radius: 12px;
-        background: rgba(255,255,255,.035);
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(74, 166, 255, 0.2), rgba(123, 109, 255, 0.16));
       }
-      .list-toolbar button, .item-actions button {
-        min-height: 34px;
-        padding: 0 10px;
-        border-radius: 9px;
-        font-size: 12px;
-      }
-      .item {
-        display: grid;
-        grid-template-columns: 24px minmax(0, 1fr);
-        gap: 9px;
+      .current-bar b { font-size: 18px; }
+      .callout { padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); color: #d5e6ff; font-size: 13px; font-weight: 700; line-height: 1.5; }
+      .callout.warn { background: rgba(255, 196, 87, 0.12); color: var(--warn); }
+      .callout.bad { background: rgba(255, 91, 120, 0.12); color: #ffc0cb; }
+      .qr-grid { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 14px; align-items: center; margin-top: 14px; }
+      .qr-grid img { width: 168px; height: 168px; border-radius: 12px; background: white; }
+      .link-box {
+        display: block;
+        margin: 6px 0 10px;
         padding: 10px 12px;
         border-radius: 12px;
-        background: rgba(255,255,255,.05);
-      }
-      .select-cell { display: grid; place-items: start center; padding-top: 3px; }
-      .item-body { min-width: 0; }
-      .item-copy {
+        background: rgba(0, 0, 0, 0.22);
+        color: #d7e8ff;
+        font-size: 13px;
+        line-height: 1.45;
         overflow-wrap: anywhere;
-        word-break: break-word;
       }
+      .tabs { display: flex; gap: 8px; margin: 12px 0; }
+      .tabs button { flex: 1; }
+      .tabs button.active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+      .hidden { display: none !important; }
+      .empty { padding: 18px 8px; color: var(--muted); font-weight: 700; }
+      .list { display: grid; gap: 8px; }
+      .item {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 10px;
+        padding: 12px;
+        border-radius: 14px;
+        background: var(--panel-2);
+      }
+      .item-copy { overflow-wrap: anywhere; line-height: 1.5; font-weight: 700; white-space: pre-line; }
+      .inline-editor { min-height: 110px; }
       .edit-actions { display: none; }
       .item.editing .view-actions { display: none; }
       .item.editing .edit-actions { display: flex; }
-      .item-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
-      .tag { display:inline-flex; margin-top: 7px; padding: 3px 7px; border-radius: 999px; background: rgba(255,255,255,.08); color: #b8cbea; font-size: 12px; }
-      .image-main { display:flex; align-items:center; gap:10px; min-width: 0; }
-      .thumb { width: 68px; height: 68px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,.08); flex: 0 0 auto; }
-      .message { min-height: 22px; margin: 12px 2px 0; color: #b9d8ff; font-weight: 700; }
-      .message.error { color: #ffb4c3; }
-      .inline-btn { min-height: 38px; padding: 0 12px; border-radius: 10px; font-size: 13px; }
-      @media (max-width: 920px) {
-        .workspace, .lists, .stats { grid-template-columns: 1fr; }
+      .thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,.08); }
+      .image-main { display: flex; gap: 10px; min-width: 0; }
+      .split { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; }
+      .confirm {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        background: rgba(3, 8, 16, 0.72);
+      }
+      .confirm[hidden] { display: none !important; }
+      .confirm-card { width: min(440px, 100%); padding: 18px; border-radius: 16px; background: #101a2b; border: 1px solid var(--line); }
+      .confirm-card p { margin: 10px 0 16px; color: #d5e4f8; line-height: 1.55; }
+      @media (max-width: 860px) {
+        .shell { width: min(100% - 20px, 1180px); }
+        .layout, .split, .qr-grid { grid-template-columns: 1fr; }
+        .top { align-items: flex-start; }
+        h1 { font-size: 24px; }
+        .qr-grid img { width: min(220px, 100%); height: auto; }
       }
     </style>
   </head>
   <body>
-    <main class="app">
-      <div class="topbar">
+    <main class="shell">
+      <header class="top">
         <div>
-          <h1>深圳科学技术馆推介官后台</h1>
-          <div class="muted">管理文案、图片和扫码分发策略。文案使用后即消耗，不会重复发放。</div>
+          <p class="eyebrow">Review Sys</p>
+          <h1>推介官后台</h1>
+          <p class="lead">每个板块有自己的文案和二维码。图片仍是全站共用。</p>
         </div>
-        <button id="logoutBtn" class="logout-btn" type="button">退出登录</button>
+        <button id="logoutBtn" class="btn" type="button">退出登录</button>
+      </header>
+      <p id="message" class="status" role="status">正在读取后台…</p>
+
+      <div class="layout">
+        <aside class="panel">
+          <div class="panel-head">
+            <h2>板块</h2>
+            <p class="lead">点一行，右侧就只处理这一块。排序只影响列表先后，不改变扫码链接。</p>
+          </div>
+          <form id="sectionForm" class="form">
+            <label>板块名称
+              <input id="sectionName" type="text" maxlength="40" placeholder="例如：常设展览" required />
+            </label>
+            <label>排序
+              <input id="sectionSort" type="number" step="1" value="0" />
+              <span class="hint">数字越小越靠前。改名或改排序都不会改变二维码。</span>
+            </label>
+            <label class="check"><input id="sectionEnabled" type="checkbox" checked /> 启用。停用后，只有这个板块的二维码不再发文案。</label>
+            <div class="row">
+              <button id="sectionSubmit" class="btn primary" type="submit">添加板块</button>
+              <button id="sectionCancel" class="btn hidden" type="button">取消编辑</button>
+            </div>
+          </form>
+          <div id="sectionAdminList" class="section-nav"></div>
+        </aside>
+
+        <div class="stack">
+          <section id="emptyWorkspace" class="panel">
+            <h2>先添加一个板块</h2>
+            <p class="lead">添加后，才能导入它的文案、查看二维码。</p>
+          </section>
+
+          <div id="workspace" class="stack hidden">
+            <div class="current-bar">
+              <div>
+                <div class="hint">当前正在管理</div>
+                <b id="currentName">未选择</b>
+              </div>
+              <span id="currentState" class="chip now">当前板块</span>
+            </div>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2>二维码和访问链接</h2>
+                <p class="lead">二维码在这台服务器本地生成，不会把链接发给外部网站。</p>
+              </div>
+              <form id="publicBaseForm" class="form">
+                <label>站点公开地址
+                  <input id="publicBaseUrl" type="url" inputmode="url" placeholder="https://share.example.com" />
+                  <span class="hint">留空就用你现在打开后台的地址。localhost、127.0.0.1 只能在这台电脑打开，手机扫不了。给观众用之前，填手机能够访问的 https 地址。</span>
+                </label>
+                <div class="row"><button class="btn" type="submit">保存公开地址</button></div>
+              </form>
+              <p id="sectionHealth" class="callout"></p>
+              <div class="qr-grid">
+                <img id="qrImage" alt="当前板块二维码" width="168" height="168" />
+                <div>
+                  <div class="hint">专属链接 · 板块 ID 固定</div>
+                  <code id="entryUrl" class="link-box"></code>
+                  <div class="row">
+                    <button id="copyLinkBtn" class="btn primary" type="button">复制链接</button>
+                    <a id="downloadQr" class="btn" href="#" download>下载二维码</a>
+                  </div>
+                  <p id="localWarning" class="hint" hidden>这个地址是本机地址，手机扫码打不开。请先保存公网 https 地址，再下载二维码。</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2 id="importTitle">导入文案</h2>
+                <p class="current-pill lead" id="importTarget">请先选择板块。</p>
+              </div>
+              <div class="tabs">
+                <button id="tabFile" class="btn active" type="button">文件导入</button>
+                <button id="tabPaste" class="btn" type="button">手工粘贴</button>
+              </div>
+              <div id="panelFile">
+                <input id="textFile" type="file" accept=".txt,.md,.docx" multiple hidden />
+                <div class="row">
+                  <button id="pickTextFileBtn" class="btn primary" type="button">选择文件并导入到当前板块</button>
+                </div>
+                <p id="fileImportHint" class="hint">支持 UTF-8 TXT、MD、DOCX。文件只会进入当前板块。</p>
+              </div>
+              <div id="panelPaste" class="hidden">
+                <textarea id="textInput" placeholder="多条之间用空行分隔。"></textarea>
+                <div class="row" style="margin-top:10px;">
+                  <button id="uploadPasteBtn" class="btn primary" type="button">导入到当前板块</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2 id="textLibraryTitle">文案库</h2>
+                <p id="textListHint" class="lead">请先选择板块</p>
+              </div>
+              <div class="row" style="margin-bottom:10px;">
+                <button id="selectAllTexts" class="btn small" type="button">全选当前页</button>
+                <button id="clearTexts" class="btn small" type="button">取消选择</button>
+                <button id="resetTexts" class="btn small" type="button">恢复未使用</button>
+                <button id="markTextsUsed" class="btn small" type="button">标为已使用</button>
+                <button id="deleteTexts" class="btn small danger" type="button">删除所选</button>
+              </div>
+              <div id="textList" class="list"></div>
+            </section>
+          </div>
+        </div>
       </div>
 
-      <section class="stats" id="stats"></section>
-
-      <section class="workspace">
-        <div class="card">
-          <div class="card-title">
-            <div>
-              <h2>导入文案</h2>
-              <div class="muted">先批量导入文件，再手工补充零散文案。重复项会自动跳过。</div>
-            </div>
-          </div>
-          <div class="split-tabs">
-            <button id="tabFile" class="active" type="button">模式一：文件批量导入</button>
-            <button id="tabPaste" type="button">模式二：单条手工导入</button>
-          </div>
-
-          <div id="panelFile" class="mode-panel active">
-            <div class="form-grid">
-              <input id="textFile" type="file" accept=".txt,.md,.docx" multiple hidden />
-              <div class="import-file-actions">
-                <button id="pickTextFileBtn" class="primary-wide" type="button">选择文件并导入</button>
-              </div>
-              <div class="muted">支持同时选择多个 txt / md / docx 文件，选完后自动导入。</div>
-            </div>
-          </div>
-
-          <div id="panelPaste" class="mode-panel">
-            <div class="form-grid">
-              <textarea id="textInput" placeholder="在这里粘贴多条文案，空行分隔。"></textarea>
-              <div class="button-row">
-                <button id="uploadPasteBtn" type="button">直接导入</button>
-              </div>
-            </div>
-          </div>
+      <section class="panel" style="margin-top:16px;">
+        <div class="panel-head">
+          <h2>全站图片</h2>
+          <p class="lead">不按板块拆分。所有二维码入口共用这里的策略和图片库。</p>
         </div>
-
-        <aside class="card">
-          <div class="card-title">
-            <div>
-              <h2>图片策略</h2>
-              <div class="muted">图片可随时补充，用户用过即消耗。默认自动保存策略，不需要额外点保存。</div>
+        <div class="split">
+          <div class="form">
+            <label class="check"><input type="radio" name="imageMode" value="random" checked /> 随机不重复：每次复制成功消耗一张未使用图片。</label>
+            <label class="check"><input type="radio" name="imageMode" value="fixed" /> 固定一张：所有入口重复展示同一张图。</label>
+            <label class="check"><input type="radio" name="imageMode" value="off" /> 关闭图片：只发文案。</label>
+            <p id="imageUploadHint" class="hint"></p>
+            <div class="row" id="randomUploadActions">
+              <button id="pickImageFolderBtn" class="btn primary" type="button">选择图片文件夹</button>
+              <button id="pickImageFilesBtn" class="btn" type="button">选择多张图片</button>
             </div>
-          </div>
-
-          <div class="form-grid">
+            <div class="row hidden" id="fixedUploadActions">
+              <button id="pickFixedImageBtn" class="btn primary" type="button">上传 1 张并设为固定图</button>
+            </div>
             <input id="imageFiles" type="file" accept="image/*" multiple hidden />
             <input id="imageFolder" type="file" accept="image/*" multiple webkitdirectory directory hidden />
             <input id="fixedImageFile" type="file" accept="image/*" hidden />
-
-            <div class="strategy">
-              <label class="strategy-option">
-                <input type="radio" name="imageMode" value="random" checked />
-                <span><strong>随机不重复</strong><span class="muted">每扫一次发一张未用图片，用户用过即消耗。可随时补充新图继续发放。</span></span>
-              </label>
-              <label class="strategy-option">
-                <input type="radio" name="imageMode" value="fixed" />
-                <span><strong>固定一张</strong><span class="muted">指定一张图片作为当前固定图，适合活动统一物料。</span></span>
-              </label>
-              <label class="strategy-option">
-                <input type="radio" name="imageMode" value="off" />
-                <span><strong>关闭图片</strong><span class="muted">只发文案，不要求用户保存图片。</span></span>
-              </label>
+          </div>
+          <div>
+            <div class="row" style="margin-bottom:10px;">
+              <button id="selectAllImages" class="btn small" type="button">全选</button>
+              <button id="clearImages" class="btn small" type="button">取消</button>
+              <button id="resetImages" class="btn small" type="button">恢复未使用</button>
+              <button id="markImagesUsed" class="btn small" type="button">标为已使用</button>
+              <button id="deleteImages" class="btn small danger" type="button">删除所选</button>
             </div>
-
-            <div class="upload-panel">
-              <div class="muted" id="imageUploadHint">随机不重复模式：选择文件夹或多张图片，选完后自动上传并进入未使用图片库。</div>
-              <div class="button-row upload-actions" id="randomUploadActions">
-                <button id="pickImageFolderBtn" type="button">选择图片文件夹</button>
-                <button id="pickImageFilesBtn" class="secondary" type="button">选择多张图片</button>
-              </div>
-              <div class="button-row upload-actions single hidden" id="fixedUploadActions">
-                <button id="pickFixedImageBtn" type="button">选择 1 张固定图片并上传</button>
-              </div>
-            </div>
+            <p id="imageListHint" class="hint">图片库</p>
+            <div id="imageList" class="list"></div>
           </div>
-        </aside>
-      </section>
-
-      <section class="lists">
-        <div class="card">
-          <div class="card-title"><h2>文案库</h2><span class="muted" id="textListHint">展示最近 80 条</span></div>
-          <div class="list-toolbar">
-            <button id="selectAllTexts" class="secondary" type="button">全选当前页</button>
-            <button id="clearTexts" class="secondary" type="button">取消选择</button>
-            <button id="resetTexts" class="secondary" type="button">批量恢复未使用</button>
-            <button id="markTextsUsed" class="secondary" type="button">批量标为已使用</button>
-            <button id="deleteTexts" class="danger" type="button">批量删除</button>
-          </div>
-          <div class="list" id="textList"></div>
-        </div>
-        <div class="card">
-          <div class="card-title"><h2>图片库</h2><span class="muted" id="imageListHint">展示最近 80 张</span></div>
-          <div class="list-toolbar">
-            <button id="selectAllImages" class="secondary" type="button">全选当前页</button>
-            <button id="clearImages" class="secondary" type="button">取消选择</button>
-            <button id="resetImages" class="secondary" type="button">批量恢复未使用</button>
-            <button id="markImagesUsed" class="secondary" type="button">批量标为已使用</button>
-            <button id="deleteImages" class="danger" type="button">批量删除</button>
-          </div>
-          <div class="list" id="imageList"></div>
         </div>
       </section>
-
-      <p class="message" id="message"></p>
     </main>
 
-      <script>
+    <div id="confirmDialog" class="confirm" hidden>
+      <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <h3 id="confirmTitle">确认删除</h3>
+        <p id="confirmBody"></p>
+        <div class="row">
+          <button id="confirmCancel" class="btn" type="button">取消</button>
+          <button id="confirmOk" class="btn danger" type="button">删除</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
       const $ = (selector) => document.querySelector(selector);
-      const statsEl = $("#stats");
+      const message = $("#message");
       const textList = $("#textList");
       const imageList = $("#imageList");
-      const message = $("#message");
-      const tabFile = $("#tabFile");
-      const tabPaste = $("#tabPaste");
-      const panelFile = $("#panelFile");
-      const panelPaste = $("#panelPaste");
       const textFileInput = $("#textFile");
       const imageFileInput = $("#imageFiles");
       const imageFolderInput = $("#imageFolder");
       const fixedImageInput = $("#fixedImageFile");
-      const imageUploadHint = $("#imageUploadHint");
-      const randomUploadActions = $("#randomUploadActions");
-      const fixedUploadActions = $("#fixedUploadActions");
-      const textListHint = $("#textListHint");
-      const imageListHint = $("#imageListHint");
       const LIST_LIMIT = 80;
-      let latestSettings = { imageMode: "random", fixedImageId: "" };
-      let latestData = { texts: [], images: [] };
+      let latestSettings = { imageMode: "random", fixedImageId: "", publicBaseUrl: "" };
+      let latestData = { texts: [], images: [], sections: [] };
+      let sections = [];
+      let selectedSectionId = "";
+      let editingSectionId = "";
+      let busyAction = false;
+
+      try { selectedSectionId = sessionStorage.getItem("adminSectionId") || ""; } catch (error) { selectedSectionId = ""; }
 
       function escapeHTML(value) {
-        return String(value).replace(/[&<>"']/g, (char) => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#039;",
-        })[char]);
+        return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
       }
-
       function showMessage(text, type = "") {
         message.textContent = text;
         message.classList.toggle("error", type === "error");
       }
-
-      function statCard(title, value) {
-        return `<div class="stat"><b>${value}</b><span>${title}</span></div>`;
+      function persistSection(id) {
+        selectedSectionId = id || "";
+        try { sessionStorage.setItem("adminSectionId", selectedSectionId); } catch (error) { selectedSectionId = id || ""; }
       }
-
+      function currentSection() {
+        return sections.find((section) => section.id === selectedSectionId) || null;
+      }
+      function isLocalUrl(url) {
+        try {
+          const host = new URL(url).hostname;
+          return host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "::1";
+        } catch (error) {
+          return false;
+        }
+      }
+      function entryUrlFor(section) {
+        const configured = String(latestSettings.publicBaseUrl || "").replace(/\/+$/, "");
+        const base = configured || location.origin;
+        return `${base}/?s=${section.id}`;
+      }
+      async function postJSON(url, body) {
+        const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        if (response.status === 401) { location.replace("/login.html"); throw new Error("请先登录后台"); }
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.message || "操作失败");
+        return data;
+      }
+      async function patchJSON(url, body) {
+        const response = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        if (response.status === 401) { location.replace("/login.html"); throw new Error("请先登录后台"); }
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.message || "操作失败");
+        return data;
+      }
+      async function deleteJSON(url) {
+        const response = await fetch(url, { method: "DELETE" });
+        if (response.status === 401) { location.replace("/login.html"); throw new Error("请先登录后台"); }
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.message || "操作失败");
+        return data;
+      }
+      function askConfirm({ title, body, confirmLabel }) {
+        $("#confirmTitle").textContent = title;
+        $("#confirmBody").textContent = body;
+        $("#confirmOk").textContent = confirmLabel || "删除";
+        const dialog = $("#confirmDialog");
+        dialog.hidden = false;
+        return new Promise((resolve) => {
+          const ok = $("#confirmOk");
+          const cancel = $("#confirmCancel");
+          function finish(value) {
+            dialog.hidden = true;
+            ok.removeEventListener("click", onOk);
+            cancel.removeEventListener("click", onCancel);
+            resolve(value);
+          }
+          function onOk() { finish(true); }
+          function onCancel() { finish(false); }
+          ok.addEventListener("click", onOk);
+          cancel.addEventListener("click", onCancel);
+        });
+      }
+      function resetSectionForm() {
+        editingSectionId = "";
+        $("#sectionForm").reset();
+        $("#sectionEnabled").checked = true;
+        $("#sectionSort").value = "0";
+        $("#sectionSubmit").textContent = "添加板块";
+        $("#sectionCancel").classList.add("hidden");
+      }
       function modeLabel(mode) {
         return ({ random: "随机不重复", fixed: "固定一张", off: "关闭图片" })[mode] || mode;
       }
-
-      function textById(id) {
-        return latestData.texts.find((entry) => entry.id === id);
-      }
-
-      function selectedIds(kind) {
-        const selector = kind === "text" ? "[data-text-select]:checked" : "[data-image-select]:checked";
-        return [...document.querySelectorAll(selector)].map((input) => input.value);
-      }
-
-      async function postJSON(url, body) {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (response.status === 401) {
-          location.replace("/login.html");
-          throw new Error("请先登录后台");
-        }
-        const data = await response.json();
-        if (!data.ok) throw new Error(data.message || "操作失败");
-        return data;
-      }
-
-      async function patchJSON(url, body) {
-        const response = await fetch(url, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (response.status === 401) {
-          location.replace("/login.html");
-          throw new Error("请先登录后台");
-        }
-        const data = await response.json();
-        if (!data.ok) throw new Error(data.message || "操作失败");
-        return data;
-      }
-
       function renderImageUploadControls(mode) {
         const fixedMode = mode === "fixed";
-        randomUploadActions.classList.toggle("hidden", fixedMode);
-        fixedUploadActions.classList.toggle("hidden", !fixedMode);
-
-        if (fixedMode) {
-          imageUploadHint.textContent = "固定一张模式：这里只能选择 1 张图片，上传后会自动设为当前固定图。";
-          return;
-        }
-
-        if (mode === "off") {
-          imageUploadHint.textContent = "关闭图片模式：可以先补充图片库；后续启用随机不重复后，会继续发放未使用图片。";
-          return;
-        }
-
-        imageUploadHint.textContent = "随机不重复模式：选择文件夹或多张图片，选完后自动上传并进入未使用图片库。";
+        $("#randomUploadActions").classList.toggle("hidden", fixedMode);
+        $("#fixedUploadActions").classList.toggle("hidden", !fixedMode);
+        const hint = $("#imageUploadHint");
+        if (fixedMode) hint.textContent = "固定一张：上传后会自动成为当前固定图，所有板块入口都展示它。";
+        else if (mode === "off") hint.textContent = "关闭图片：入口只显示文案。图片可以先放在库里，以后再打开。";
+        else hint.textContent = "随机不重复：复制成功后才消耗一张未使用图片。";
       }
-
-      function renderStats(data) {
-        statsEl.innerHTML = [
-          statCard("文案总数", data.counts.textTotal),
-          statCard("未使用文案", data.counts.textUnused),
-          statCard("图片总数", data.counts.imageTotal),
-          statCard("未使用图片", data.counts.imageUnused),
-        ].join("");
-      }
-
-      function renderMode(data) {
-        document.querySelectorAll('input[name="imageMode"]').forEach((radio) => {
-          radio.checked = data.settings.imageMode === radio.value;
-        });
-        renderImageUploadControls(data.settings.imageMode);
-      }
-
       function renderFixedButtons() {
         imageList.querySelectorAll("[data-fixed]").forEach((button) => {
           button.textContent = button.dataset.fixed === latestSettings.fixedImageId ? "当前固定" : "设为固定";
         });
       }
-
-      async function refresh(options = {}) {
+      function renderWorkspace() {
+        const current = currentSection();
+        $("#workspace").classList.toggle("hidden", !current);
+        $("#emptyWorkspace").classList.toggle("hidden", Boolean(current));
+        if (!current) return;
+        $("#currentName").textContent = current.name;
+        $("#currentState").textContent = current.enabled ? "启用中" : "已停用";
+        $("#importTitle").textContent = `导入文案 · ${current.name}`;
+        $("#importTarget").textContent = `这些内容只进入当前板块：${current.name}`;
+        $("#textLibraryTitle").textContent = `文案库 · 当前板块：${current.name}`;
+        $("#fileImportHint").textContent = `文件会导入到「${current.name}」。支持同时选择多个 UTF-8 TXT、MD、DOCX。`;
+        $("#textInput").placeholder = `这些文案会导入到「${current.name}」。多条之间用空行分隔。`;
+        const health = $("#sectionHealth");
+        if (!current.enabled) {
+          health.className = "callout bad";
+          health.textContent = "这个板块已停用。扫它的二维码会提示入口已停用，不会改发其他板块。";
+        } else if (current.textUnused === 0) {
+          health.className = "callout warn";
+          health.textContent = "这个板块没有未使用文案。扫它会显示「次数已用完」，其他板块不受影响。";
+        } else {
+          health.className = "callout";
+          health.textContent = `可以发放。未使用 ${current.textUnused} 条，共 ${current.textTotal} 条。`;
+        }
+        const url = entryUrlFor(current);
+        $("#entryUrl").textContent = url;
+        $("#localWarning").hidden = !isLocalUrl(url);
+        const version = Date.now();
+        $("#qrImage").src = `/api/admin/sections/${current.id}/qr?v=${version}`;
+        $("#qrImage").alt = `${current.name} 的二维码`;
+        $("#downloadQr").href = `/api/admin/sections/${current.id}/qr?download=1&v=${version}`;
+        $("#publicBaseUrl").value = latestSettings.publicBaseUrl || "";
+      }
+      function renderSections() {
+        const list = $("#sectionAdminList");
+        list.innerHTML = sections.map((section) => `
+          <button class="section-card ${section.id === selectedSectionId ? "selected" : ""}" type="button" data-section-row="${section.id}">
+            <strong>${escapeHTML(section.name)}</strong>
+            <span class="hint">${section.enabled ? "启用" : "停用"} · 排序 ${section.sortOrder} · 未使用 ${section.textUnused}/${section.textTotal}</span>
+            <span class="chips">
+              ${section.id === selectedSectionId ? '<span class="chip now">当前板块</span>' : ""}
+              <span class="chip">ID ${section.id.slice(0, 6)}</span>
+            </span>
+            <span class="row" style="margin-top:8px;">
+              <span class="btn small" data-edit-section="${section.id}">编辑</span>
+              <span class="btn small" data-toggle-section="${section.id}">${section.enabled ? "停用" : "启用"}</span>
+              <span class="btn small danger" data-delete-section="${section.id}">删除</span>
+            </span>
+          </button>
+        `).join("") || '<div class="empty">还没有板块。</div>';
+        renderWorkspace();
+      }
+      function reconcileSection(data) {
+        sections = data.sections || [];
+        if (!sections.some((section) => section.id === selectedSectionId)) persistSection(sections[0]?.id || "");
+      }
+      async function refresh(options = {}, attempt = 0) {
         const renderLists = options.renderLists !== false;
-        const response = await fetch(`/api/admin/state?limit=${LIST_LIMIT}`);
-        if (response.status === 401) {
-          location.replace("/login.html");
-          return;
-        }
+        const params = new URLSearchParams({ limit: String(LIST_LIMIT) });
+        if (selectedSectionId) params.set("sectionId", selectedSectionId);
+        const response = await fetch(`/api/admin/state?${params}`);
+        if (response.status === 401) { location.replace("/login.html"); return; }
         const data = await response.json();
-        latestSettings = data.settings;
+        reconcileSection(data);
+        if (attempt < 1 && selectedSectionId && data.sectionId !== selectedSectionId) return refresh(options, attempt + 1);
+        latestSettings = data.settings || latestSettings;
         latestData = data;
-
-        renderStats(data);
-        renderMode(data);
-        if (!renderLists) {
-          return;
-        }
-
-        textListHint.textContent = `展示最近 ${data.limit || LIST_LIMIT} 条`;
-        imageListHint.textContent = `展示最近 ${data.limit || LIST_LIMIT} 张`;
-
+        renderSections();
+        renderImageUploadControls(data.settings.imageMode);
+        document.querySelectorAll('input[name="imageMode"]').forEach((radio) => { radio.checked = data.settings.imageMode === radio.value; });
+        if (!renderLists) return;
+        const current = currentSection();
+        $("#textListHint").textContent = current ? `只显示「${current.name}」最近 ${data.limit || LIST_LIMIT} 条` : "请先选择板块";
+        $("#imageListHint").textContent = `最近 ${data.limit || LIST_LIMIT} 张`;
         textList.innerHTML = data.texts.map((item) => `
           <div class="item" data-text-item="${item.id}">
-            <label class="select-cell">
-              <input type="checkbox" data-text-select value="${item.id}">
-            </label>
-            <div class="item-body">
+            <label><input type="checkbox" data-text-select value="${item.id}"></label>
+            <div>
               <div class="item-copy" data-text-copy>${escapeHTML(item.content)}</div>
               <textarea class="inline-editor hidden" data-text-editor>${escapeHTML(item.content)}</textarea>
-              <span class="tag">${item.used ? "已使用" : "未使用"} · ${escapeHTML(item.sourceName || "手动")}</span>
-              <div class="item-actions view-actions">
-                <button class="secondary" type="button" data-edit-text="${item.id}">编辑</button>
-                <button class="secondary" type="button" data-reset-text="${item.id}">恢复未使用</button>
-                <button class="secondary" type="button" data-used-text="${item.id}">标为已使用</button>
-                <button class="danger" type="button" data-delete-text="${item.id}">删除</button>
+              <div class="chips"><span class="chip">${item.used ? "已使用" : "未使用"} · ${escapeHTML(item.sourceName || "手动")}</span></div>
+              <div class="row view-actions" style="margin-top:8px;">
+                <button class="btn small" type="button" data-edit-text="${item.id}">编辑</button>
+                <button class="btn small" type="button" data-reset-text="${item.id}">恢复未使用</button>
+                <button class="btn small" type="button" data-used-text="${item.id}">标为已使用</button>
+                <button class="btn small danger" type="button" data-delete-text="${item.id}">删除</button>
               </div>
-              <div class="item-actions edit-actions">
-                <button type="button" data-save-text="${item.id}">保存</button>
-                <button class="secondary" type="button" data-cancel-text="${item.id}">取消</button>
+              <div class="row edit-actions" style="margin-top:8px;">
+                <button class="btn small primary" type="button" data-save-text="${item.id}">保存</button>
+                <button class="btn small" type="button" data-cancel-text="${item.id}">取消</button>
               </div>
             </div>
           </div>
-        `).join("") || '<div class="muted">暂无文案</div>';
-
+        `).join("") || `<div class="empty">${current ? `「${escapeHTML(current.name)}」还没有文案。` : "请先选择板块。"}</div>`;
         imageList.innerHTML = data.images.map((item) => `
           <div class="item">
-            <label class="select-cell">
-              <input type="checkbox" data-image-select value="${item.id}">
-            </label>
-            <div class="item-body">
+            <label><input type="checkbox" data-image-select value="${item.id}"></label>
+            <div>
               <div class="image-main">
-                <img class="thumb" src="${item.path}" alt="" loading="lazy" decoding="async">
-                <div class="item-copy">
-                  <div>${escapeHTML(item.originalName)}</div>
-                  <span class="tag">${item.used ? "已使用" : "未使用"} · ${escapeHTML(item.mimeType)}</span>
+                <img class="thumb" src="${item.path}" alt="" loading="lazy">
+                <div>
+                  <div class="item-copy">${escapeHTML(item.originalName)}</div>
+                  <div class="chips"><span class="chip">${item.used ? "已使用" : "未使用"}</span></div>
                 </div>
               </div>
-              <div class="item-actions">
-                <button class="secondary" type="button" data-fixed="${item.id}">${item.id === data.settings.fixedImageId ? "当前固定" : "设为固定"}</button>
-                <button class="secondary" type="button" data-edit-image="${item.id}">改名</button>
-                <button class="secondary" type="button" data-reset-image="${item.id}">恢复未使用</button>
-                <button class="secondary" type="button" data-used-image="${item.id}">标为已使用</button>
-                <button class="danger" type="button" data-delete-image="${item.id}">删除</button>
+              <div class="row" style="margin-top:8px;">
+                <button class="btn small" type="button" data-fixed="${item.id}">${item.id === data.settings.fixedImageId ? "当前固定" : "设为固定"}</button>
+                <button class="btn small" type="button" data-edit-image="${item.id}">改名</button>
+                <button class="btn small" type="button" data-reset-image="${item.id}">恢复未使用</button>
+                <button class="btn small" type="button" data-used-image="${item.id}">标为已使用</button>
+                <button class="btn small danger" type="button" data-delete-image="${item.id}">删除</button>
               </div>
             </div>
           </div>
-        `).join("") || '<div class="muted">暂无图片</div>';
-
-        showMessage(`当前图片策略：${modeLabel(data.settings.imageMode)}${data.settings.fixedImageId ? " · 已指定固定图" : ""}`);
-
-        imageList.querySelectorAll("[data-fixed]").forEach((button) => {
-          button.addEventListener("click", async () => {
-            document.querySelector('input[name="imageMode"][value="fixed"]').checked = true;
-            latestSettings.imageMode = "fixed";
-            renderImageUploadControls("fixed");
-            await saveMode(button.dataset.fixed);
-          });
-        });
+        `).join("") || '<div class="empty">还没有图片。没有图片时，入口仍然可以只发文案。</div>';
+        renderFixedButtons();
       }
-
+      function textById(id) { return (latestData.texts || []).find((entry) => entry.id === id); }
+      function selectedIds(kind) {
+        const selector = kind === "text" ? "[data-text-select]:checked" : "[data-image-select]:checked";
+        return [...document.querySelectorAll(selector)].map((input) => input.value);
+      }
       async function bulkTexts(action, ids) {
+        if (!ids.length) return showMessage("请先选择文案", "error");
         await postJSON("/api/admin/texts/bulk", { action, ids });
         await refresh();
         showMessage("文案库已更新");
       }
-
       async function bulkImages(action, ids) {
+        if (!ids.length) return showMessage("请先选择图片", "error");
         await postJSON("/api/admin/images/bulk", { action, ids });
         await refresh();
         showMessage("图片库已更新");
       }
-
-      function toggleVisible(selector, checked) {
-        document.querySelectorAll(selector).forEach((input) => {
-          input.checked = checked;
-        });
-      }
-
       async function uploadTexts() {
+        if (!selectedSectionId) return showMessage("请先选择板块", "error");
         if (!textFileInput.files.length) return;
         const form = new FormData();
+        form.append("sectionId", selectedSectionId);
         for (const file of textFileInput.files) form.append("files", file);
-
-        showMessage("正在导入文案，请稍等...");
+        showMessage("正在导入文案…");
         const response = await fetch("/api/admin/upload-texts", { method: "POST", body: form });
         const data = await response.json();
         if (!data.ok) throw new Error(data.message || "导入失败");
-
         textFileInput.value = "";
         await refresh();
-        showMessage(`文案导入完成：新增 ${data.added} 条，重复跳过 ${data.skipped} 条`);
+        showMessage(`已导入到「${currentSection()?.name || "当前板块"}」：新增 ${data.added} 条，重复跳过 ${data.skipped} 条`);
       }
-
       async function uploadPastedTexts() {
-        const form = new FormData();
+        if (!selectedSectionId) return showMessage("请先选择板块", "error");
         const text = $("#textInput").value.trim();
-        if (text) form.append("text", text);
-        if (!text) return showMessage("请先输入要导入的文案");
-        showMessage("正在导入文案，请稍等...");
+        if (!text) return showMessage("请先输入要导入的文案", "error");
+        const form = new FormData();
+        form.append("sectionId", selectedSectionId);
+        form.append("text", text);
+        showMessage("正在导入文案…");
         const response = await fetch("/api/admin/upload-texts", { method: "POST", body: form });
         const data = await response.json();
         if (!data.ok) throw new Error(data.message || "导入失败");
-
         $("#textInput").value = "";
         await refresh();
-        showMessage(`文案导入完成：新增 ${data.added} 条，重复跳过 ${data.skipped} 条`);
+        showMessage(`已导入到「${currentSection()?.name || "当前板块"}」：新增 ${data.added} 条，重复跳过 ${data.skipped} 条`);
       }
-
-      async function uploadImages(input, options = {}) {
-        if (!input.files.length) return;
-        const allFiles = [...input.files].filter((file) => file.type.startsWith("image/"));
-        if (!allFiles.length) {
-          input.value = "";
-          return showMessage("没有找到可上传的图片文件", "error");
-        }
-
-        const maxFileSize = 30 * 1024 * 1024;
-        const oversized = allFiles.filter((file) => file.size > maxFileSize);
-        const validFiles = allFiles.filter((file) => file.size <= maxFileSize);
-        const selectedFiles = options.setFixed ? validFiles.slice(0, 1) : validFiles;
-
-        input.value = "";
-        if (!selectedFiles.length) {
-          return showMessage("图片超过单张 30MB 限制，请先压缩后再上传", "error");
-        }
-
-        const preparedFiles = await prepareImageFiles(selectedFiles, (current, total) => {
-          showMessage(`正在优化图片：${current}/${total}`);
-        });
-        const savedBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0)
-          - preparedFiles.reduce((sum, file) => sum + file.size, 0);
-
-        const batches = createImageBatches(preparedFiles);
-        const totalBytes = preparedFiles.reduce((sum, file) => sum + file.size, 0);
-        let uploadedBytesBeforeBatch = 0;
-        let added = 0;
-        const images = [];
-
-        for (let index = 0; index < batches.length; index += 1) {
-          const batch = batches[index];
-          const batchBytes = batch.reduce((sum, file) => sum + file.size, 0);
-          const data = await uploadImageBatch(batch, (event) => {
-            const currentLoaded = event.lengthComputable ? event.loaded : 0;
-            const uploadedBytes = uploadedBytesBeforeBatch + currentLoaded;
-            const percent = totalBytes ? Math.min(99, Math.round((uploadedBytes / totalBytes) * 100)) : 0;
-            showMessage(`正在上传图片：第 ${index + 1}/${batches.length} 批 · ${percent}% · ${formatBytes(uploadedBytes)} / ${formatBytes(totalBytes)}`);
-          });
-
-          uploadedBytesBeforeBatch += batchBytes;
-          added += data.added || 0;
-          images.push(...(data.images || []));
-          showMessage(`已上传第 ${index + 1}/${batches.length} 批，正在继续...`);
-        }
-
-        if (options.setFixed && images[0]?.id) {
-          document.querySelector('input[name="imageMode"][value="fixed"]').checked = true;
-          await saveMode(images[0].id);
-          await refresh();
-          showMessage(`固定图已更新：新增 ${added} 张${oversized.length ? `，${oversized.length} 张超过 30MB 已跳过` : ""}`);
-          return;
-        }
-
-        await refresh();
-        const optimizedText = savedBytes > 128 * 1024 ? `，已自动压缩 ${formatBytes(savedBytes)}` : "";
-        showMessage(`图片上传完成：新增 ${added} 张${optimizedText}${oversized.length ? `，${oversized.length} 张超过 30MB 已跳过` : ""}`);
+      async function saveMode(fixedImageId) {
+        const imageMode = document.querySelector('input[name="imageMode"]:checked').value;
+        const nextFixedImageId = fixedImageId !== undefined ? fixedImageId : (imageMode === "fixed" ? latestSettings.fixedImageId : "");
+        showMessage("正在保存图片策略…");
+        const data = await postJSON("/api/admin/settings", { imageMode, fixedImageId: nextFixedImageId });
+        latestSettings = data.settings;
+        renderImageUploadControls(data.settings.imageMode);
+        renderFixedButtons();
+        showMessage(`图片策略已保存：${modeLabel(data.settings.imageMode)}`);
+        await refresh({ renderLists: false });
       }
-
       function formatBytes(bytes) {
         if (!bytes) return "0B";
         const units = ["B", "KB", "MB", "GB"];
         const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
         return `${(bytes / (1024 ** exponent)).toFixed(exponent ? 1 : 0)}${units[exponent]}`;
       }
-
       function createImageBatches(files) {
         const maxBatchBytes = 6 * 1024 * 1024;
         const maxBatchFiles = 4;
         const batches = [];
         let current = [];
         let currentBytes = 0;
-
         for (const file of files) {
-          const nextWouldBeTooLarge = current.length && currentBytes + file.size > maxBatchBytes;
-          const nextWouldHaveTooManyFiles = current.length >= maxBatchFiles;
-          if (nextWouldBeTooLarge || nextWouldHaveTooManyFiles) {
+          if ((current.length && currentBytes + file.size > maxBatchBytes) || current.length >= maxBatchFiles) {
             batches.push(current);
             current = [];
             currentBytes = 0;
@@ -613,11 +650,9 @@
           current.push(file);
           currentBytes += file.size;
         }
-
         if (current.length) batches.push(current);
         return batches;
       }
-
       async function prepareImageFiles(files, onProgress) {
         const output = [];
         for (let index = 0; index < files.length; index += 1) {
@@ -626,17 +661,19 @@
         }
         return output;
       }
-
       async function compressImageIfNeeded(file) {
         if (file.type === "image/gif" || file.size < 900 * 1024) return file;
-
         try {
-          const bitmap = await loadImageBitmap(file);
-          const maxEdge = 1800;
-          const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+          const bitmap = await new Promise((resolve, reject) => {
+            const image = new Image();
+            const url = URL.createObjectURL(file);
+            image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
+            image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("image load failed")); };
+            image.src = url;
+          });
+          const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
           const width = Math.max(1, Math.round(bitmap.width * scale));
           const height = Math.max(1, Math.round(bitmap.height * scale));
-
           const canvas = document.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
@@ -644,294 +681,312 @@
           context.fillStyle = "#fff";
           context.fillRect(0, 0, width, height);
           context.drawImage(bitmap, 0, 0, width, height);
-
           const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
           if (!blob || blob.size >= file.size) return file;
-
-          const nextName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
-          return new File([blob], nextName, { type: "image/jpeg", lastModified: file.lastModified });
-        } catch {
+          return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg", lastModified: file.lastModified });
+        } catch (error) {
           return file;
         }
       }
-
-      function loadImageBitmap(file) {
-        return new Promise((resolve, reject) => {
-          const image = new Image();
-          const url = URL.createObjectURL(file);
-          image.onload = () => {
-            URL.revokeObjectURL(url);
-            resolve(image);
-          };
-          image.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error("image load failed"));
-          };
-          image.src = url;
-        });
-      }
-
       function uploadImageBatch(files, onProgress) {
         return new Promise((resolve, reject) => {
           const form = new FormData();
           files.forEach((file) => form.append("files", file));
-
           const xhr = new XMLHttpRequest();
           let settled = false;
           let stallTimer;
           let lastLoaded = 0;
-
           function finish(error, data) {
             if (settled) return;
             settled = true;
             clearTimeout(stallTimer);
             error ? reject(error) : resolve(data);
           }
-
           function resetStallTimer() {
             clearTimeout(stallTimer);
-            stallTimer = setTimeout(() => {
-              xhr.abort();
-              finish(new Error("上传进度超过 45 秒没有变化，网络可能中断了，请刷新后重试"));
-            }, 45000);
+            stallTimer = setTimeout(() => { xhr.abort(); finish(new Error("上传进度超过 45 秒没有变化，请刷新后重试")); }, 45000);
           }
-
           xhr.open("POST", "/api/admin/upload-images");
           xhr.timeout = 3 * 60 * 1000;
           xhr.upload.onloadstart = resetStallTimer;
           xhr.upload.onprogress = (event) => {
-            if (event.loaded > lastLoaded) {
-              lastLoaded = event.loaded;
-              resetStallTimer();
-            }
+            if (event.loaded > lastLoaded) { lastLoaded = event.loaded; resetStallTimer(); }
             onProgress(event);
           };
           xhr.onload = () => {
-            if (xhr.status === 401) {
-              location.replace("/login.html");
-              return finish(new Error("请先登录后台"));
-            }
-
+            if (xhr.status === 401) { location.replace("/login.html"); return finish(new Error("请先登录后台")); }
             let data;
-            try {
-              data = JSON.parse(xhr.responseText || "{}");
-            } catch {
-              return finish(new Error("服务器返回异常，请稍后重试"));
-            }
-
-            if (xhr.status >= 400 || !data.ok) {
-              return finish(new Error(data.message || `上传失败：HTTP ${xhr.status}`));
-            }
-
+            try { data = JSON.parse(xhr.responseText || "{}"); } catch (error) { return finish(new Error("服务器返回异常")); }
+            if (xhr.status >= 400 || !data.ok) return finish(new Error(data.message || `上传失败：HTTP ${xhr.status}`));
             finish(null, data);
           };
           xhr.onerror = () => finish(new Error("网络连接中断，图片没有上传完成"));
-          xhr.ontimeout = () => finish(new Error("上传超时，请减少单次选择的图片数量或先压缩图片"));
-          xhr.onabort = () => finish(new Error("上传已中止，请刷新后重试"));
+          xhr.ontimeout = () => finish(new Error("上传超时，请减少单次图片数量"));
+          xhr.onabort = () => finish(new Error("上传已中止"));
           xhr.send(form);
         });
       }
-
-      async function saveMode(fixedImageId) {
-        const imageMode = document.querySelector('input[name="imageMode"]:checked').value;
-        const nextFixedImageId = fixedImageId !== undefined
-          ? fixedImageId
-          : (imageMode === "fixed" ? latestSettings.fixedImageId : "");
-        latestSettings = { ...latestSettings, imageMode, fixedImageId: nextFixedImageId };
-        renderImageUploadControls(imageMode);
-        renderFixedButtons();
-        showMessage("正在保存图片策略...");
-        const response = await fetch("/api/admin/settings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageMode, fixedImageId: nextFixedImageId }),
-        });
-        const data = await response.json();
-        if (!data.ok) throw new Error("保存失败");
-
-        latestSettings = data.settings;
-        renderImageUploadControls(data.settings.imageMode);
-        renderFixedButtons();
-        showMessage(`图片策略已保存：${modeLabel(data.settings.imageMode)}`);
-        await refresh({ renderLists: false });
+      async function uploadImages(input, options = {}) {
+        if (!input.files.length) return;
+        const allFiles = [...input.files].filter((file) => file.type.startsWith("image/"));
+        if (!allFiles.length) { input.value = ""; return showMessage("没有找到可上传的图片文件", "error"); }
+        const oversized = allFiles.filter((file) => file.size > 30 * 1024 * 1024);
+        const validFiles = allFiles.filter((file) => file.size <= 30 * 1024 * 1024);
+        const selectedFiles = options.setFixed ? validFiles.slice(0, 1) : validFiles;
+        input.value = "";
+        if (!selectedFiles.length) return showMessage("图片超过单张 30MB 限制", "error");
+        const preparedFiles = await prepareImageFiles(selectedFiles, (current, total) => showMessage(`正在优化图片：${current}/${total}`));
+        const batches = createImageBatches(preparedFiles);
+        const totalBytes = preparedFiles.reduce((sum, file) => sum + file.size, 0);
+        let uploadedBytesBeforeBatch = 0;
+        let added = 0;
+        const images = [];
+        for (let index = 0; index < batches.length; index += 1) {
+          const batch = batches[index];
+          const data = await uploadImageBatch(batch, (event) => {
+            const loaded = uploadedBytesBeforeBatch + (event.lengthComputable ? event.loaded : 0);
+            const percent = totalBytes ? Math.min(99, Math.round((loaded / totalBytes) * 100)) : 0;
+            showMessage(`正在上传图片：第 ${index + 1}/${batches.length} 批 · ${percent}%`);
+          });
+          uploadedBytesBeforeBatch += batch.reduce((sum, file) => sum + file.size, 0);
+          added += data.added || 0;
+          images.push(...(data.images || []));
+        }
+        if (options.setFixed && images[0]?.id) {
+          document.querySelector('input[name="imageMode"][value="fixed"]').checked = true;
+          await saveMode(images[0].id);
+          await refresh();
+          showMessage(`固定图已更新：新增 ${added} 张${oversized.length ? `，${oversized.length} 张超过 30MB 已跳过` : ""}`);
+          return;
+        }
+        await refresh();
+        showMessage(`图片上传完成：新增 ${added} 张${oversized.length ? `，${oversized.length} 张超过 30MB 已跳过` : ""}`);
       }
 
-      function setTab(active) {
-        const fileActive = active === "file";
-        tabFile.classList.toggle("active", fileActive);
-        tabPaste.classList.toggle("active", !fileActive);
-        panelFile.classList.toggle("active", fileActive);
-        panelPaste.classList.toggle("active", !fileActive);
-      }
-
+      $("#sectionForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (busyAction) return;
+        busyAction = true;
+        const wasEditing = Boolean(editingSectionId);
+        try {
+          const payload = { name: $("#sectionName").value, sortOrder: $("#sectionSort").value, enabled: $("#sectionEnabled").checked };
+          showMessage(wasEditing ? "正在保存板块…" : "正在添加板块…");
+          if (wasEditing) await patchJSON(`/api/admin/sections/${editingSectionId}`, payload);
+          else {
+            const created = await postJSON("/api/admin/sections", payload);
+            persistSection(created.section?.id || selectedSectionId);
+          }
+          resetSectionForm();
+          await refresh();
+          showMessage(wasEditing ? "板块已保存，二维码链接没有变" : "板块已添加");
+        } catch (error) { showMessage(error.message, "error"); }
+        finally { busyAction = false; }
+      });
+      $("#sectionCancel").addEventListener("click", () => resetSectionForm());
+      $("#sectionAdminList").addEventListener("click", async (event) => {
+        const edit = event.target.closest("[data-edit-section]");
+        const toggle = event.target.closest("[data-toggle-section]");
+        const remove = event.target.closest("[data-delete-section]");
+        const row = event.target.closest("[data-section-row]");
+        if (!row) return;
+        const section = sections.find((item) => item.id === row.dataset.sectionRow);
+        if (!section) return;
+        try {
+          if (edit) {
+            editingSectionId = section.id;
+            $("#sectionName").value = section.name;
+            $("#sectionSort").value = String(section.sortOrder);
+            $("#sectionEnabled").checked = section.enabled;
+            $("#sectionSubmit").textContent = "保存修改";
+            $("#sectionCancel").classList.remove("hidden");
+            persistSection(section.id);
+            renderSections();
+            return;
+          }
+          if (toggle) {
+            showMessage(section.enabled ? "正在停用…" : "正在启用…");
+            await patchJSON(`/api/admin/sections/${section.id}`, { enabled: !section.enabled });
+            await refresh();
+            showMessage(section.enabled ? `「${section.name}」已停用，其他板块不受影响` : `「${section.name}」已启用`);
+            return;
+          }
+          if (remove) {
+            const yes = await askConfirm({
+              title: "删除板块",
+              body: `确定删除「${section.name}」吗？它的全部文案会一起删除，图片不会删除。原来的二维码链接也会失效。`,
+            });
+            if (!yes) return;
+            showMessage("正在删除板块…");
+            await deleteJSON(`/api/admin/sections/${section.id}`);
+            if (selectedSectionId === section.id) persistSection("");
+            if (editingSectionId === section.id) resetSectionForm();
+            await refresh();
+            showMessage("板块已删除");
+            return;
+          }
+          persistSection(section.id);
+          showMessage(`已切换到「${section.name}」`);
+          await refresh();
+        } catch (error) { showMessage(error.message, "error"); }
+      });
+      $("#publicBaseForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          showMessage("正在保存公开地址…");
+          const data = await postJSON("/api/admin/settings", { publicBaseUrl: $("#publicBaseUrl").value });
+          latestSettings = data.settings;
+          renderWorkspace();
+          showMessage(data.settings.publicBaseUrl ? "公开地址已保存，二维码已按新地址更新" : "已改回使用当前访问地址");
+        } catch (error) { showMessage(error.message, "error"); }
+      });
+      $("#copyLinkBtn").addEventListener("click", async () => {
+        const url = $("#entryUrl").textContent.trim();
+        if (!url) return;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(url);
+            showMessage("链接已复制");
+            return;
+          }
+        } catch (error) {}
+        const helper = document.createElement("textarea");
+        helper.value = url;
+        helper.setAttribute("readonly", "");
+        helper.style.position = "fixed";
+        helper.style.left = "-9999px";
+        document.body.appendChild(helper);
+        helper.select();
+        const copied = document.execCommand("copy");
+        helper.remove();
+        showMessage(copied ? "链接已复制" : "复制失败，请手动选择链接", copied ? "" : "error");
+      });
+      $("#tabFile").addEventListener("click", () => {
+        $("#tabFile").classList.add("active");
+        $("#tabPaste").classList.remove("active");
+        $("#panelFile").classList.remove("hidden");
+        $("#panelPaste").classList.add("hidden");
+      });
+      $("#tabPaste").addEventListener("click", () => {
+        $("#tabPaste").classList.add("active");
+        $("#tabFile").classList.remove("active");
+        $("#panelPaste").classList.remove("hidden");
+        $("#panelFile").classList.add("hidden");
+      });
       $("#pickTextFileBtn").addEventListener("click", () => {
+        if (!selectedSectionId) return showMessage("请先选择板块", "error");
         textFileInput.click();
       });
-      textFileInput.addEventListener("change", async () => {
-        try { await uploadTexts(); } catch (error) { showMessage(error.message); }
-      });
-      $("#uploadPasteBtn").addEventListener("click", async () => {
-        try { await uploadPastedTexts(); } catch (error) { showMessage(error.message); }
-      });
-      $("#pickImageFolderBtn").addEventListener("click", () => {
-        imageFolderInput.click();
-      });
-      $("#pickImageFilesBtn").addEventListener("click", () => {
-        imageFileInput.click();
-      });
-      $("#pickFixedImageBtn").addEventListener("click", () => {
-        fixedImageInput.click();
-      });
-      imageFolderInput.addEventListener("change", async () => {
-        try { await uploadImages(imageFolderInput); } catch (error) { showMessage(error.message); }
-      });
-      imageFileInput.addEventListener("change", async () => {
-        try { await uploadImages(imageFileInput); } catch (error) { showMessage(error.message); }
-      });
-      fixedImageInput.addEventListener("change", async () => {
-        try { await uploadImages(fixedImageInput, { setFixed: true }); } catch (error) { showMessage(error.message); }
-      });
-      document.querySelectorAll('input[name="imageMode"]').forEach((radio) => {
-        radio.addEventListener("change", async () => {
-          try {
-            latestSettings.imageMode = radio.value;
-            renderImageUploadControls(radio.value);
-            await saveMode();
-          } catch (error) {
-            showMessage(error.message);
-          }
-        });
-      });
-
+      textFileInput.addEventListener("change", async () => { try { await uploadTexts(); } catch (error) { showMessage(error.message, "error"); } });
+      $("#uploadPasteBtn").addEventListener("click", async () => { try { await uploadPastedTexts(); } catch (error) { showMessage(error.message, "error"); } });
       textList.addEventListener("click", async (event) => {
         const button = event.target.closest("button");
         if (!button) return;
-
         try {
-          if (button.dataset.editText) {
-            const item = textById(button.dataset.editText);
-            const card = button.closest("[data-text-item]");
-            const copy = card.querySelector("[data-text-copy]");
+          const card = button.closest("[data-text-item]");
+          if (button.dataset.editText && card) {
             const editor = card.querySelector("[data-text-editor]");
-            editor.value = item?.content || "";
-            copy.classList.add("hidden");
+            editor.value = textById(button.dataset.editText)?.content || "";
+            card.querySelector("[data-text-copy]").classList.add("hidden");
             editor.classList.remove("hidden");
             card.classList.add("editing");
             editor.focus();
-            editor.setSelectionRange(editor.value.length, editor.value.length);
             return;
           }
-
-          if (button.dataset.cancelText) {
-            const card = button.closest("[data-text-item]");
-            const copy = card.querySelector("[data-text-copy]");
-            const editor = card.querySelector("[data-text-editor]");
-            editor.classList.add("hidden");
-            copy.classList.remove("hidden");
+          if (button.dataset.cancelText && card) {
+            card.querySelector("[data-text-editor]").classList.add("hidden");
+            card.querySelector("[data-text-copy]").classList.remove("hidden");
             card.classList.remove("editing");
             return;
           }
-
-          if (button.dataset.saveText) {
-            const card = button.closest("[data-text-item]");
-            const editor = card.querySelector("[data-text-editor]");
-            await patchJSON(`/api/admin/texts/${button.dataset.saveText}`, { content: editor.value });
+          if (button.dataset.saveText && card) {
+            showMessage("正在保存文案…");
+            await patchJSON(`/api/admin/texts/${button.dataset.saveText}`, { content: card.querySelector("[data-text-editor]").value });
             await refresh();
-            showMessage("文案已保存");
+            showMessage(`文案已保存到「${currentSection()?.name || "当前板块"}」`);
             return;
           }
-
-          if (button.dataset.resetText) {
-            await bulkTexts("reset", [button.dataset.resetText]);
-            return;
-          }
-
-          if (button.dataset.usedText) {
-            await bulkTexts("mark-used", [button.dataset.usedText]);
-            return;
-          }
-
+          if (button.dataset.resetText) return bulkTexts("reset", [button.dataset.resetText]);
+          if (button.dataset.usedText) return bulkTexts("mark-used", [button.dataset.usedText]);
           if (button.dataset.deleteText) {
-            if (!confirm("确定删除这条文案吗？删除后不可恢复。")) return;
+            const yes = await askConfirm({ title: "删除文案", body: "确定删除这条文案吗？删除后不能恢复。" });
+            if (!yes) return;
             await bulkTexts("delete", [button.dataset.deleteText]);
           }
-        } catch (error) {
-          showMessage(error.message);
-        }
+        } catch (error) { showMessage(error.message, "error"); }
       });
-
+      $("#selectAllTexts").addEventListener("click", () => document.querySelectorAll("[data-text-select]").forEach((input) => { input.checked = true; }));
+      $("#clearTexts").addEventListener("click", () => document.querySelectorAll("[data-text-select]").forEach((input) => { input.checked = false; }));
+      $("#resetTexts").addEventListener("click", async () => { try { await bulkTexts("reset", selectedIds("text")); } catch (error) { showMessage(error.message, "error"); } });
+      $("#markTextsUsed").addEventListener("click", async () => { try { await bulkTexts("mark-used", selectedIds("text")); } catch (error) { showMessage(error.message, "error"); } });
+      $("#deleteTexts").addEventListener("click", async () => {
+        const ids = selectedIds("text");
+        if (!ids.length) return showMessage("请先选择文案", "error");
+        const yes = await askConfirm({ title: "删除文案", body: `确定删除选中的 ${ids.length} 条文案吗？删除后不能恢复。` });
+        if (!yes) return;
+        try { await bulkTexts("delete", ids); } catch (error) { showMessage(error.message, "error"); }
+      });
+      $("#pickImageFolderBtn").addEventListener("click", () => imageFolderInput.click());
+      $("#pickImageFilesBtn").addEventListener("click", () => imageFileInput.click());
+      $("#pickFixedImageBtn").addEventListener("click", () => fixedImageInput.click());
+      imageFolderInput.addEventListener("change", async () => { try { await uploadImages(imageFolderInput); } catch (error) { showMessage(error.message, "error"); } });
+      imageFileInput.addEventListener("change", async () => { try { await uploadImages(imageFileInput); } catch (error) { showMessage(error.message, "error"); } });
+      fixedImageInput.addEventListener("change", async () => { try { await uploadImages(fixedImageInput, { setFixed: true }); } catch (error) { showMessage(error.message, "error"); } });
+      document.querySelectorAll('input[name="imageMode"]').forEach((radio) => {
+        radio.addEventListener("change", async () => {
+          try { renderImageUploadControls(radio.value); await saveMode(); }
+          catch (error) { showMessage(error.message, "error"); }
+        });
+      });
       imageList.addEventListener("click", async (event) => {
         const button = event.target.closest("button");
         if (!button) return;
-
         try {
+          if (button.dataset.fixed) {
+            document.querySelector('input[name="imageMode"][value="fixed"]').checked = true;
+            await saveMode(button.dataset.fixed);
+            return;
+          }
           if (button.dataset.editImage) {
             const item = latestData.images.find((entry) => entry.id === button.dataset.editImage);
             const next = prompt("编辑图片名称", item?.originalName || "");
             if (next === null) return;
+            showMessage("正在保存图片名称…");
             await patchJSON(`/api/admin/images/${button.dataset.editImage}`, { originalName: next });
             await refresh();
             showMessage("图片名称已保存");
             return;
           }
-
-          if (button.dataset.resetImage) {
-            await bulkImages("reset", [button.dataset.resetImage]);
-            return;
-          }
-
-          if (button.dataset.usedImage) {
-            await bulkImages("mark-used", [button.dataset.usedImage]);
-            return;
-          }
-
+          if (button.dataset.resetImage) return bulkImages("reset", [button.dataset.resetImage]);
+          if (button.dataset.usedImage) return bulkImages("mark-used", [button.dataset.usedImage]);
           if (button.dataset.deleteImage) {
-            if (!confirm("确定删除这张图片吗？服务器文件也会一起删除。")) return;
+            const yes = await askConfirm({ title: "删除图片", body: "确定删除这张图片吗？服务器上的文件也会删除。" });
+            if (!yes) return;
             await bulkImages("delete", [button.dataset.deleteImage]);
           }
-        } catch (error) {
-          showMessage(error.message);
-        }
+        } catch (error) { showMessage(error.message, "error"); }
       });
-
-      $("#selectAllTexts").addEventListener("click", () => toggleVisible("[data-text-select]", true));
-      $("#clearTexts").addEventListener("click", () => toggleVisible("[data-text-select]", false));
-      $("#resetTexts").addEventListener("click", async () => {
-        try { await bulkTexts("reset", selectedIds("text")); } catch (error) { showMessage(error.message); }
-      });
-      $("#markTextsUsed").addEventListener("click", async () => {
-        try { await bulkTexts("mark-used", selectedIds("text")); } catch (error) { showMessage(error.message); }
-      });
-      $("#deleteTexts").addEventListener("click", async () => {
-        const ids = selectedIds("text");
-        if (!ids.length) return showMessage("请先选择文案");
-        if (!confirm(`确定删除 ${ids.length} 条文案吗？删除后不可恢复。`)) return;
-        try { await bulkTexts("delete", ids); } catch (error) { showMessage(error.message); }
-      });
-
-      $("#selectAllImages").addEventListener("click", () => toggleVisible("[data-image-select]", true));
-      $("#clearImages").addEventListener("click", () => toggleVisible("[data-image-select]", false));
-      $("#resetImages").addEventListener("click", async () => {
-        try { await bulkImages("reset", selectedIds("image")); } catch (error) { showMessage(error.message); }
-      });
-      $("#markImagesUsed").addEventListener("click", async () => {
-        try { await bulkImages("mark-used", selectedIds("image")); } catch (error) { showMessage(error.message); }
-      });
+      $("#selectAllImages").addEventListener("click", () => document.querySelectorAll("[data-image-select]").forEach((input) => { input.checked = true; }));
+      $("#clearImages").addEventListener("click", () => document.querySelectorAll("[data-image-select]").forEach((input) => { input.checked = false; }));
+      $("#resetImages").addEventListener("click", async () => { try { await bulkImages("reset", selectedIds("image")); } catch (error) { showMessage(error.message, "error"); } });
+      $("#markImagesUsed").addEventListener("click", async () => { try { await bulkImages("mark-used", selectedIds("image")); } catch (error) { showMessage(error.message, "error"); } });
       $("#deleteImages").addEventListener("click", async () => {
         const ids = selectedIds("image");
-        if (!ids.length) return showMessage("请先选择图片");
-        if (!confirm(`确定删除 ${ids.length} 张图片吗？服务器文件也会一起删除。`)) return;
-        try { await bulkImages("delete", ids); } catch (error) { showMessage(error.message); }
+        if (!ids.length) return showMessage("请先选择图片", "error");
+        const yes = await askConfirm({ title: "删除图片", body: `确定删除选中的 ${ids.length} 张图片吗？服务器文件也会删除。` });
+        if (!yes) return;
+        try { await bulkImages("delete", ids); } catch (error) { showMessage(error.message, "error"); }
       });
       $("#logoutBtn").addEventListener("click", async () => {
         await fetch("/api/auth/logout", { method: "POST" });
         location.replace("/login.html");
       });
+      $("#confirmDialog").addEventListener("click", (event) => {
+        if (event.target.id === "confirmDialog") $("#confirmCancel").click();
+      });
 
-      tabFile.addEventListener("click", () => setTab("file"));
-      tabPaste.addEventListener("click", () => setTab("paste"));
-
-      refresh();
+      refresh().then(() => {
+        if (message.textContent === "正在读取后台…") showMessage("后台已就绪");
+      }).catch((error) => showMessage(error.message || "读取后台失败", "error"));
     </script>
   </body>
 </html>

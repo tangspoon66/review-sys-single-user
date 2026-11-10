@@ -20,16 +20,22 @@ body {
   min-height: 100vh;
   color: #eef6ff;
   background:
-    radial-gradient(circle at 18% 8%, rgba(70, 166, 255, 0.2), transparent 34%),
-    radial-gradient(circle at 84% 12%, rgba(123, 109, 255, 0.14), transparent 30%),
-    linear-gradient(180deg, rgba(7, 17, 31, 0.96), rgba(7, 17, 31, 0.82)),
+    linear-gradient(180deg, rgba(7, 17, 31, 0.38), rgba(7, 17, 31, 0.74)),
+    url("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAVAAwDASIAAhEBAxEB/8QAGQAAAgMBAAAAAAAAAAAAAAAAAAMBBAUG/8QAIxAAAgEDAwQDAAAAAAAAAAAAAQIAAwQRBRIhIkGBwRUycf/EABUBAQEAAAAAAAAAAAAAAAAAAAED/8QAFxEBAQEBAAAAAAAAAAAAAAAAABEBIf/aAAwDAQACEQMRAD8A5tbZm6lUhe2TLa2tJEUPQd2IyTuwPGJr0NEuVI6rdjx9ufUf8JeLwLmkgHZTj1LTqdJoXVQDdk7v2S+qXJcncPIhCOB//9k=") center top / cover no-repeat fixed,
     #07111f;
 }
 
+/* Added by script.js after the copy renders so the photo never competes with it. */
 body.bg-ready {
   background:
     linear-gradient(180deg, rgba(7, 17, 31, 0.38), rgba(7, 17, 31, 0.74)),
-    url("./assets/space-bg.jpg") center top / cover no-repeat fixed,
+    url("./assets/space-bg-540.jpg") center top / cover no-repeat fixed,
+    url("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAVAAwDASIAAhEBAxEB/8QAGQAAAgMBAAAAAAAAAAAAAAAAAAMBBAUG/8QAIxAAAgEDAwQDAAAAAAAAAAAAAQIAAwQRBRIhIkGBwRUycf/EABUBAQEAAAAAAAAAAAAAAAAAAAED/8QAFxEBAQEBAAAAAAAAAAAAAAAAABEBIf/aAAwDAQACEQMRAD8A5tbZm6lUhe2TLa2tJEUPQd2IyTuwPGJr0NEuVI6rdjx9ufUf8JeLwLmkgHZTj1LTqdJoXVQDdk7v2S+qXJcncPIhCOB//9k=") center top / cover no-repeat fixed,
+    #07111f;
+  background:
+    linear-gradient(180deg, rgba(7, 17, 31, 0.38), rgba(7, 17, 31, 0.74)),
+    image-set(url("./assets/space-bg-540.webp") type("image/webp"), url("./assets/space-bg-540.jpg") type("image/jpeg")) center top / cover no-repeat fixed,
+    url("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAVAAwDASIAAhEBAxEB/8QAGQAAAgMBAAAAAAAAAAAAAAAAAAMBBAUG/8QAIxAAAgEDAwQDAAAAAAAAAAAAAQIAAwQRBRIhIkGBwRUycf/EABUBAQEAAAAAAAAAAAAAAAAAAAED/8QAFxEBAQEBAAAAAAAAAAAAAAAAABEBIf/aAAwDAQACEQMRAD8A5tbZm6lUhe2TLa2tJEUPQd2IyTuwPGJr0NEuVI6rdjx9ufUf8JeLwLmkgHZTj1LTqdJoXVQDdk7v2S+qXJcncPIhCOB//9k=") center top / cover no-repeat fixed,
     #07111f;
 }
 
@@ -86,6 +92,11 @@ textarea {
   min-width: 0;
 }
 
+.brand-sprite:not([src]),
+.brand-logo:not([src]) {
+  visibility: hidden;
+}
+
 .brand-sprite {
   display: block;
   width: 44px;
@@ -107,6 +118,7 @@ textarea {
   white-space: nowrap;
 }
 
+.section-panel,
 .copy-panel {
   overflow: hidden;
   border: 1px solid rgba(200, 230, 255, 0.14);
@@ -160,6 +172,57 @@ textarea {
 
 .copy-float:active {
   transform: translateY(1px);
+}
+
+.copy-float:disabled {
+  opacity: 0.55;
+}
+
+#copyText::placeholder {
+  color: rgba(220, 236, 255, 0.55);
+}
+
+html.has-section #gatePanel,
+html:not(.has-section) #copyPanel {
+  display: none;
+}
+
+.gate-copy,
+.section-hint {
+  margin: 0;
+  padding: 16px 14px 18px;
+  color: #d7e8ff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.exhausted {
+  margin: 0;
+  padding: 28px 16px;
+  border: 1px solid rgba(200, 230, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(9, 18, 33, 0.52);
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.copy-panel {
+  margin-top: 14px;
+}
+
+#copyText {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.copy-panel[hidden],
+.preview[hidden],
+.exhausted[hidden],
+#gatePanel[hidden] {
+  display: none !important;
 }
 
 .preview {
