@@ -370,9 +370,9 @@ describe("public static exposure", { concurrency: 1 }, () => {
       ["/?s=abc123", "/index.html", "text/html", "请扫描现场对应板块的二维码"],
       ["/login.html", "/login.html", "text/html", "请输入后台账号密码"],
       ["/login.html?error=config", "/login.html", "text/html", "请输入后台账号密码"],
-      ["/styles.css", "/styles.css", "text/css", "space-bg.jpg"],
-      ["/styles.css?v=1", "/styles.css", "text/css", "space-bg.jpg"],
-      ["/styles%2ecss", "/styles.css", "text/css", "space-bg.jpg"],
+      ["/styles.css", "/styles.css", "text/css", "space-bg-540.webp"],
+      ["/styles.css?v=1", "/styles.css", "text/css", "space-bg-540.webp"],
+      ["/styles%2ecss", "/styles.css", "text/css", "space-bg-540.webp"],
       ["/script.js", "/script.js", "javascript", "Missing required UI elements"],
       ["/%73cript.js", "/script.js", "javascript", "Missing required UI elements"],
     ];

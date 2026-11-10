@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>深圳科学技术馆推介官</title>
+    <!-- Must run before the stylesheet link: a script after it would wait for the CSS download. -->
+    <script>
+      (function () {
+        var id = new URLSearchParams(location.search).get("s") || "";
+        if (!id) return;
+        document.documentElement.classList.add("has-section");
+        if (!/^[a-f0-9]{8,32}$/i.test(id)) return;
+        window.__sectionPreview = fetch("/api/sections/" + encodeURIComponent(id) + "/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        }).then(function (response) { return response.json(); });
+        window.__sectionPreview.catch(function () {});
+      })();
+    </script>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -12,8 +27,12 @@
         <div class="brand-copy">
           <p class="brand-line brand-line-single">深圳科学技术馆 - 推介官</p>
         </div>
-        <img class="brand-sprite" src="./assets/coming-soon-transparent.gif" alt="小科小探AI 动效" loading="lazy" decoding="async" fetchpriority="low" />
-        <img class="brand-logo" src="./assets/logo-white.png" alt="深圳科学技术馆推介官" decoding="async" />
+        <!-- Decorative images use data-src so script.js can load them after the copy is on screen. -->
+        <picture>
+          <source data-srcset="./assets/coming-soon-88.webp" type="image/webp" />
+          <img class="brand-sprite" data-src="./assets/coming-soon-transparent.gif" alt="小科小探AI 动效" width="44" height="44" decoding="async" />
+        </picture>
+        <img class="brand-logo" data-src="./assets/logo-white-180.png" alt="深圳科学技术馆推介官" width="74" height="38" decoding="async" />
       </header>
 
       <section class="copy-panel" id="gatePanel" aria-label="扫码说明">
@@ -21,10 +40,10 @@
         <p class="gate-copy">请扫描现场对应板块的二维码。每个码只打开那一个板块的文案。</p>
       </section>
 
-      <section class="copy-panel" id="copyPanel" hidden aria-label="笔记文案">
+      <section class="copy-panel" id="copyPanel" aria-label="笔记文案">
         <div class="panel-head"><span id="copyHeading">笔记文案</span></div>
-        <textarea id="copyText" readonly aria-label="分享文案"></textarea>
-        <button id="copyButton" class="copy-float" type="button">复制文案</button>
+        <textarea id="copyText" readonly aria-label="分享文案" placeholder="正在读取文案…"></textarea>
+        <button id="copyButton" class="copy-float" type="button" disabled>复制文案</button>
       </section>
 
       <section class="preview" id="imagePreview" hidden aria-label="本次图片">

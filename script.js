@@ -28,6 +28,23 @@ function init() {
     toastTimer = setTimeout(() => toast.classList.remove("show"), 1400);
   }
 
+  function afterPaint(callback) {
+    requestAnimationFrame(() => setTimeout(callback, 0));
+  }
+
+  let decorationsLoaded = false;
+  function loadDecorations() {
+    if (decorationsLoaded) return;
+    decorationsLoaded = true;
+    document.querySelectorAll(".brand source[data-srcset]").forEach((source) => {
+      source.srcset = source.dataset.srcset;
+    });
+    document.querySelectorAll(".brand img[data-src]").forEach((image) => {
+      image.src = image.dataset.src;
+    });
+    document.body.classList.add("bg-ready");
+  }
+
   function hideCopy() {
     copyPanel.hidden = true;
     copyText.value = "";
@@ -39,6 +56,7 @@ function init() {
     hideCopy();
     notice.hidden = true;
     gatePanel.hidden = false;
+    afterPaint(loadDecorations);
   }
 
   function showProblem(message) {
@@ -47,6 +65,7 @@ function init() {
     notice.hidden = false;
     notice.textContent = message || "这个入口无效";
     activeReservation = null;
+    afterPaint(loadDecorations);
   }
 
   function showCopy(data) {
@@ -59,13 +78,16 @@ function init() {
     copyHeading.textContent = data.sectionName || "笔记文案";
     copyText.value = data.text || "";
     copyPanel.hidden = false;
-    if (data.image) {
-      imagePreview.hidden = false;
-      postImage.src = data.image;
-    } else {
-      imagePreview.hidden = true;
-      postImage.removeAttribute("src");
-    }
+    copyButton.disabled = false;
+    imagePreview.hidden = true;
+    postImage.removeAttribute("src");
+    afterPaint(() => {
+      if (data.image) {
+        postImage.src = data.image;
+        imagePreview.hidden = false;
+      }
+      loadDecorations();
+    });
   }
 
   async function releaseActive(keepalive = false) {
@@ -94,12 +116,15 @@ function init() {
       return;
     }
 
-    const response = await fetch(`/api/sections/${encodeURIComponent(sectionId)}/preview`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
-    const data = await response.json();
+    const early = window.__sectionPreview;
+    window.__sectionPreview = null;
+    const data = early
+      ? await early
+      : await fetch(`/api/sections/${encodeURIComponent(sectionId)}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      }).then((response) => response.json());
     if (!data.ok) {
       showProblem(data.message || "这个入口无效");
       return;
@@ -197,20 +222,8 @@ function init() {
     }).catch(() => {});
   });
 
-  function loadBackgroundWhenIdle() {
-    const load = () => {
-      const image = new Image();
-      image.onload = () => document.body.classList.add("bg-ready");
-      image.src = "./assets/space-bg.jpg";
-    };
-    if ("requestIdleCallback" in window) {
-      requestIdleCallback(load, { timeout: 1600 });
-      return;
-    }
-    setTimeout(load, 600);
-  }
-
-  loadBackgroundWhenIdle();
+  // A stalled copy request should not leave the page without its decorations forever.
+  setTimeout(loadDecorations, 4000);
   loadEntry().catch((error) => {
     showProblem("素材加载失败，请稍后重试。");
     console.error(error);
